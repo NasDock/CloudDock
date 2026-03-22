@@ -14,13 +14,16 @@ FROM deps AS shared-builder
 WORKDIR /app/packages/shared
 COPY packages/shared/src ./src
 COPY packages/shared/tsconfig.json ./tsconfig.json
+COPY tsconfig.base.json /app/tsconfig.base.json
 RUN pnpm build
 
 # Build server
 FROM deps AS server-builder
 WORKDIR /app/packages/server
 COPY packages/server/src ./src
+COPY packages/server/tsconfig.json ./tsconfig.json
 COPY packages/server/src/prisma ./prisma
+COPY tsconfig.base.json /app/tsconfig.base.json
 COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
 RUN pnpm build
 

@@ -13,6 +13,7 @@ FROM deps AS shared-builder
 WORKDIR /app/packages/shared
 COPY packages/shared/src ./src
 COPY packages/shared/tsconfig.json ./tsconfig.json
+COPY tsconfig.base.json /app/tsconfig.base.json
 RUN pnpm build
 
 FROM deps AS app-builder
@@ -20,6 +21,8 @@ WORKDIR /app/packages/nas-client
 COPY packages/nas-client/src ./src
 COPY packages/nas-client/bin ./bin
 COPY packages/nas-client/vite.ui.config.ts ./vite.ui.config.ts
+COPY packages/nas-client/tsconfig.json ./tsconfig.json
+COPY tsconfig.base.json /app/tsconfig.base.json
 COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
 RUN pnpm build
 
@@ -32,6 +35,7 @@ COPY packages/web/tsconfig.node.json ./tsconfig.node.json
 COPY packages/web/vite.config.ts ./vite.config.ts
 COPY packages/web/postcss.config.js ./postcss.config.js
 COPY packages/web/tailwind.config.js ./tailwind.config.js
+COPY tsconfig.base.json /app/tsconfig.base.json
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 RUN pnpm build
