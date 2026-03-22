@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NAS Tunnel Client - Web Management Interface" />
+  <title>NAS Tunnel Client</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+      --border: #475569;
+      --radius: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    #root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./main.tsx"></script>
+</body>
+</html>

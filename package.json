@@ -1,0 +1,12 @@
+{
+  "name": "clouddock",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "docker:server": "docker build -f docker/server.dockerfile -t clouddock-server:latest .",
+    "docker:edge": "docker build -f docker/edge.dockerfile -t clouddock-edge:latest ."
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["bcrypt", "@prisma/client", "@prisma/engines", "esbuild"]
+  }
+}

@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nat_tunnel
+      POSTGRES_PASSWORD: nat_tunnel_dev
+      POSTGRES_DB: nat_tunnel
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nat_tunnel']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server.dockerfile
+    ports:
+      - '3300:3000'  # HTTP API
+      - '3301:3001'  # WebSocket
+    environment:
+      DATABASE_URL: postgresql://nat_tunnel:nat_tunnel_dev@postgres:5432/nat_tunnel
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      PORT: 3000
+      WS_PORT: 3001
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../packages/server/src:/app/packages/server/src:ro
+      - ../packages/shared/src:/app/node_modules/@cloud-dock/shared/src:ro
+
+  edge:
+    build:
+      context: ..
+      dockerfile: docker/edge.dockerfile
+      args:
+        VITE_API_URL: http://localhost:3300/api
+    ports:
+      - '3000:3000'  # Web UI
+      - '5700:5700'  # NAS local API
+
+volumes:
+  postgres_data:
+  redis_data:

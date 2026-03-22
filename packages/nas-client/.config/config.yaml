@@ -1,0 +1,8 @@
+serverUrl: ws://localhost:3300/ws/device
+clientKey: ck_Vt9-ipPbfi0q5yy-Aq-vtllHRnucWym4
+deviceName: 我的NAS
+tunnels: []
+logLevel: info
+reconnectInterval: 5000
+maxReconnectDelay: 300000
+heartbeatInterval: 30000

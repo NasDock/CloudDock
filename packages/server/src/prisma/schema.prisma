@@ -1,0 +1,108 @@
+// Prisma Schema for NAT Tunnel Server (SQLite)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId       String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  plan         String   @default("free")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tunnels       Tunnel[]
+  clients      Client[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// Client = NAS client instance, identified by clientKey
+// One user can have multiple clients
+model Client {
+  clientId    String    @id @default(cuid())
+  clientKey   String    @unique @map("client_key")
+  userId      String    @map("user_id")
+  name        String
+  isDefault   Boolean   @default(false) @map("is_default")
+  enabled     Boolean   @default(true) @map("is_enabled")
+  status      String    @default("offline")
+  lastSeen    DateTime? @map("last_seen")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  tunnels     Tunnel[]
+
+  @@index([userId])
+  @@index([clientKey])
+  @@map("clients")
+}
+
+// Tunnel = port forwarding rule
+// Each tunnel belongs to a user
+model Tunnel {
+  tunnelId      String    @id @default(cuid())
+  userId        String    @map("user_id")
+  clientId      String?   @map("client_id")
+  name          String
+  protocol      String    @default("http")
+  localAddress  String    @map("local_address")
+  localHostname String?   @map("local_hostname")
+  enabled       Boolean   @default(true) @map("is_enabled")
+  status        String    @default("offline")
+  accessToken   String?   @map("access_token")
+  publicPath    String    @map("public_path")
+  ipWhitelist   String   @default("[]")
+  metadata      String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastHeartbeat DateTime? @map("last_heartbeat")
+
+  user       User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  client     Client?    @relation(fields: [clientId], references: [clientId], onDelete: SetNull)
+  accessLogs AccessLog[]
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([publicPath])
+  @@map("tunnels")
+}
+
+model AccessLog {
+  logId         String   @id @default(cuid())
+  tunnelId      String   @map("tunnel_id")
+  timestamp     DateTime @default(now())
+  clientIp      String   @map("client_ip")
+  method        String
+  path          String
+  statusCode    Int      @map("status_code")
+  responseTime  Int      @map("response_time")
+  bytesIn       Int      @map("bytes_in") @default(0)
+  bytesOut      Int      @map("bytes_out") @default(0)
+
+  tunnel        Tunnel   @relation(fields: [tunnelId], references: [tunnelId], onDelete: Cascade)
+
+  @@index([tunnelId, timestamp])
+  @@map("access_logs")
+}
+
+model RefreshToken {
+  tokenId   String   @id @default(cuid())
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

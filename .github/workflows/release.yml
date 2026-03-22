@@ -1,0 +1,165 @@
+name: build-and-release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/server.dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}-server:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}-server:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:latest
+
+      - name: Build and push edge image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/edge.dockerfile
+          push: true
+          build-args: |
+            VITE_API_URL=http://localhost:3300/api
+          tags: |
+            ghcr.io/${{ github.repository }}-edge:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}-edge:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:latest
+
+  build-android:
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install EAS CLI
+        run: npm i -g eas-cli
+
+      - name: Build Android APK (EAS)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          cd packages/mobile
+          eas build -p android --profile preview --non-interactive --json > /tmp/eas-build.json
+
+      - name: Download APK
+        run: |
+          url=$(cat /tmp/eas-build.json | jq -r '.[0].artifacts.buildUrl')
+          if [ "$url" = "null" ] || [ -z "$url" ]; then
+            echo "Failed to read buildUrl from EAS output"
+            cat /tmp/eas-build.json
+            exit 1
+          fi
+          curl -L "$url" -o /tmp/cloud-dock.apk
+
+      - name: Upload APK to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /tmp/cloud-dock.apk
+
+  deploy-server:
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server
+        run: |
+          pnpm -C packages/shared build
+          pnpm -C packages/server build
+
+      - name: Package server artifact
+        run: |
+          tar -czf /tmp/clouddock-server.tgz \
+            package.json pnpm-lock.yaml pnpm-workspace.yaml \
+            packages/server/package.json \
+            packages/server/dist \
+            packages/server/prisma
+
+      - name: Upload server artifact
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          source: /tmp/clouddock-server.tgz
+          target: /tmp/clouddock-deploy
+
+      - name: Deploy server on host
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -e
+            mkdir -p /tmp/clouddock-deploy/staging
+            tar -xzf /tmp/clouddock-deploy/clouddock-server.tgz -C /tmp/clouddock-deploy/staging
+            mkdir -p "${{ secrets.TARGET_DIR }}"
+            rm -rf "${{ secrets.TARGET_DIR }}/server"
+            mv /tmp/clouddock-deploy/staging/packages/server "${{ secrets.TARGET_DIR }}/server"
+            cp /tmp/clouddock-deploy/staging/package.json "${{ secrets.TARGET_DIR }}/package.json"
+            cp /tmp/clouddock-deploy/staging/pnpm-lock.yaml "${{ secrets.TARGET_DIR }}/pnpm-lock.yaml"
+            cp /tmp/clouddock-deploy/staging/pnpm-workspace.yaml "${{ secrets.TARGET_DIR }}/pnpm-workspace.yaml"
+            cd "${{ secrets.TARGET_DIR }}/server"
+            bash -lc "${{ secrets.SERVER_RUN_SCRIPT }}"

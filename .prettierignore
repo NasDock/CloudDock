@@ -1,0 +1,9 @@
+dist
+node_modules
+.pnpm
+.next
+.swc
+.env
+.env.*
+!.env.example
+coverage

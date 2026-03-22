@@ -1,0 +1,57 @@
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useTunnelStore } from '@/stores/tunnelStore';
+
+export const Header = () => {
+  const { user, logout, isLoggingOut } = useAuth();
+  const { wsConnected } = useTunnelStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  return (
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <span className="font-semibold text-gray-900">内网穿透</span>
+          </Link>
+
+          {/* Right side */}
+          <div className="flex items-center gap-4">
+            {/* WS Connection Status */}
+            <div className="flex items-center gap-2">
+              <StatusBadge status={wsConnected ? 'online' : 'offline'} label={wsConnected ? '已连接' : '未连接'} size="sm" />
+            </div>
+
+            {/* User menu */}
+            {user && (
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-right">
+                  <p className="font-medium text-gray-900">{user.username}</p>
+                  <p className="text-gray-500 text-xs">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+                >
+                  {isLoggingOut ? '退出中...' : '退出'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
