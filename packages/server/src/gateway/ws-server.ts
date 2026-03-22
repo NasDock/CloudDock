@@ -40,7 +40,7 @@ export class WSServer {
     const wss = new WebSocketServer({ noServer: true });
 
     httpServer.on('upgrade', (request, socket, head) => {
-      const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+      const pathname = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`).pathname;
       console.log(`[ws-server] upgrade event! path=${pathname}`);
       if (pathname === WS_PATH) {
         wss.handleUpgrade(request, socket, head, (ws) => {
@@ -58,7 +58,7 @@ export class WSServer {
   }
 
   private async handleConnection(ws: WebSocket, request: any): Promise<void> {
-    const url = new URL(request.url, `http://${request.headers.host}`);
+    const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     const clientKey = url.searchParams.get('clientKey');
     const sessionId = `ses_${Date.now()}_${nanoid(8)}`;
 

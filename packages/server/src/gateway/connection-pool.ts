@@ -55,7 +55,7 @@ export class ConnectionPool {
     const sessionId = this.tunnelToClient.get(tunnelId);
     if (!sessionId) return false;
     const conn = this.connections.get(sessionId);
-    return conn?.isAlive && conn?.ws?.readyState === WebSocket.OPEN;
+    return !!(conn?.isAlive && conn?.ws?.readyState === WebSocket.OPEN);
   }
 
   removeConnection(sessionId: string): void {

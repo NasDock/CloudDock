@@ -8,7 +8,8 @@ export async function authenticate(
   try {
     await request.jwtVerify();
     // Map JWT 'sub' claim to 'userId' (JWT standard doesn't use 'userId')
-    (request.user as any).userId = request.user.sub;
+    const user = request.user as any;
+    user.userId = user.userId ?? user.sub;
   } catch {
     unauthorized(reply, 'Invalid or expired token');
   }
@@ -20,7 +21,8 @@ export async function authenticateOptional(
 ): Promise<void> {
   try {
     await request.jwtVerify();
-    (request.user as any).userId = request.user.sub;
+    const user = request.user as any;
+    user.userId = user.userId ?? user.sub;
   } catch {
     // Silently ignore - user is optional
   }

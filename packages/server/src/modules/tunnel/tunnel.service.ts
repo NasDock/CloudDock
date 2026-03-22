@@ -1,9 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { CreateTunnelInput, UpdateTunnelInput, TunnelQueryInput, generateTunnelId, generateAccessToken, TUNNEL_LIMITS } from '@cloud-dock/shared';
-import type { Tunnel, Device, User } from '@prisma/client';
-
-type TunnelWithUser = Tunnel & { user: Pick<User, 'userId'> };
 
 export class TunnelService {
   constructor(private fastify: FastifyInstance) {}

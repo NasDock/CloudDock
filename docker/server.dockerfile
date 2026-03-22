@@ -25,6 +25,7 @@ COPY packages/server/tsconfig.json ./tsconfig.json
 COPY packages/server/src/prisma ./prisma
 COPY tsconfig.base.json /app/tsconfig.base.json
 COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
+RUN pnpm dlx prisma@5.22.0 generate --schema=./prisma/schema.prisma
 RUN pnpm build
 
 # Production image
