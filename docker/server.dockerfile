@@ -19,7 +19,7 @@ RUN pnpm build
 FROM deps AS server-builder
 WORKDIR /app/packages/server
 COPY packages/server/src ./src
-COPY packages/server/prisma ./prisma
+COPY packages/server/src/prisma ./prisma
 COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
 RUN pnpm build
 
