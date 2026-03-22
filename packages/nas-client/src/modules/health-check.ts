@@ -17,11 +17,18 @@ export interface LocalServiceHealth {
 export class HealthCheck {
   private checkInterval: NodeJS.Timeout | null = null;
   private callbacks: Set<(status: HealthStatus) => void> = new Set();
+  private serverUrl: string;
 
   constructor(
-    private serverUrl: string,
+    serverUrl: string,
     private intervalMs: number = 30000
-  ) {}
+  ) {
+    this.serverUrl = serverUrl;
+  }
+
+  setServerUrl(serverUrl: string): void {
+    this.serverUrl = serverUrl;
+  }
 
   start(): void {
     if (this.checkInterval) return;
@@ -104,7 +111,21 @@ export class HealthCheck {
 
   async checkLocalService(address: string): Promise<LocalServiceHealth> {
     const [host, portStr] = address.split(':');
+    if (!host || !portStr) {
+      return {
+        address,
+        healthy: false,
+        error: 'Invalid address'
+      };
+    }
     const port = parseInt(portStr, 10);
+    if (Number.isNaN(port)) {
+      return {
+        address,
+        healthy: false,
+        error: 'Invalid port'
+      };
+    }
 
     const start = Date.now();
 

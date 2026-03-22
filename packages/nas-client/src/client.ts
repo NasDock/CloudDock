@@ -49,7 +49,7 @@ export class NASClient extends EventEmitter {
     this.config = loadConfig();
     this.serverUrl = this.config.serverUrl;
     this.clientKey = this.config.clientKey || undefined;
-    this.healthCheck = new HealthCheck(this);
+    this.healthCheck = new HealthCheck(this.serverUrl);
     this.tunnelManager = new TunnelManager(this);
   }
 
@@ -294,7 +294,8 @@ export class NASClient extends EventEmitter {
       const isHttps = url.protocol === 'https:';
       const bodyBuffer = data.body ? Buffer.from(data.body, 'base64') : Buffer.alloc(0);
       const headers: Record<string, string> = { ...(data.headers || {}) };
-      headers['host'] = localAddress.split(':')[0];
+      const host = localAddress.split(':')[0] || localAddress;
+      headers['host'] = host;
       if (bodyBuffer.length > 0) {
         headers['content-length'] = String(bodyBuffer.length);
       } else {
@@ -340,7 +341,10 @@ export class NASClient extends EventEmitter {
 
   updateConnectionConfig(updates: Partial<NASConfig>): void {
     this.config = { ...this.config, ...updates };
-    if (updates.serverUrl) this.serverUrl = updates.serverUrl;
+    if (updates.serverUrl) {
+      this.serverUrl = updates.serverUrl;
+      this.healthCheck.setServerUrl(this.serverUrl);
+    }
     if (updates.clientKey !== undefined) this.clientKey = updates.clientKey || undefined;
     saveConfig(this.config);
   }

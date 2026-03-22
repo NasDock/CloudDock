@@ -23,8 +23,8 @@ export class TcpRelay {
 
   constructor(private config: TcpRelayConfig) {
     const [host, port] = config.localAddress.split(':');
-    this.localAddress = host;
-    this.localPort = parseInt(port, 10);
+    this.localAddress = host || '127.0.0.1';
+    this.localPort = parseInt(port || '', 10) || 0;
   }
 
   start(localListenPort: number = 0): Promise<number> {
@@ -80,7 +80,7 @@ export class TcpRelay {
       this.connections.set(connectionId, conn);
 
       // Start bidirectional forwarding
-      this.forwardLocalToRemote(connectionId, clientSocket, localSocket);
+      this.forwardLocalToRemote(clientSocket, localSocket);
       this.forwardRemoteToLocal(connectionId, clientSocket, localSocket);
     });
 

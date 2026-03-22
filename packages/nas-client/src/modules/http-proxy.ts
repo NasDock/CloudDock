@@ -35,7 +35,7 @@ export class HttpProxy {
 
       this.server.listen(localPort, '127.0.0.1', () => {
         const address = this.server!.address();
-        const port = typeof address === 'object' ? address?.port : 0;
+        const port = typeof address === 'object' ? (address?.port ?? 0) : 0;
         logger.info('HTTP proxy started', { port });
         resolve(port);
       });
@@ -88,8 +88,8 @@ export class HttpProxy {
       const requestData: WSTunnelData = {
         tunnelId: this.config.tunnelId,
         requestId,
-        method: req.method,
-        path: req.url,
+        method: req.method || 'GET',
+        path: req.url || '/',
         headers,
         body: base64Body,
         timestamp: Date.now()
@@ -173,7 +173,7 @@ export class HttpProxy {
           const responseData: WSTunnelData = {
             tunnelId: this.config.tunnelId,
             requestId: data.requestId,
-            statusCode: res.statusCode,
+            statusCode: res.statusCode ?? 200,
             responseHeaders: res.headers as Record<string, string>,
             responseBody: body.toString('base64'),
             timestamp: Date.now()
