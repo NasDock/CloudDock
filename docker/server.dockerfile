@@ -10,16 +10,17 @@ COPY packages/shared/package.json ./packages/shared/
 RUN corepack enable && pnpm install --frozen-lockfile
 
 # Build shared package first
-FROM deps AS builder
+FROM deps AS shared-builder
 WORKDIR /app/packages/shared
 COPY packages/shared/src ./src
 RUN pnpm build
 
 # Build server
+FROM deps AS server-builder
 WORKDIR /app/packages/server
 COPY packages/server/src ./src
 COPY packages/server/prisma ./prisma
-COPY --from=builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
+COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
 RUN pnpm build
 
 # Production image
@@ -31,9 +32,9 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 server
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/server/dist ./dist
-COPY --from=builder /app/packages/server/prisma ./prisma
+COPY --from=server-builder /app/node_modules ./node_modules
+COPY --from=server-builder /app/packages/server/dist ./dist
+COPY --from=server-builder /app/packages/server/prisma ./prisma
 
 RUN chown -R server:nodejs /app
 

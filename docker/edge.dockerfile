@@ -9,16 +9,17 @@ COPY packages/web/package.json ./packages/web/
 COPY packages/shared/package.json ./packages/shared/
 RUN corepack enable && pnpm install --frozen-lockfile
 
-FROM deps AS builder
+FROM deps AS shared-builder
 WORKDIR /app/packages/shared
 COPY packages/shared/src ./src
 RUN pnpm build
 
+FROM deps AS app-builder
 WORKDIR /app/packages/nas-client
 COPY packages/nas-client/src ./src
 COPY packages/nas-client/bin ./bin
 COPY packages/nas-client/vite.ui.config.ts ./vite.ui.config.ts
-COPY --from=builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
+COPY --from=shared-builder /app/packages/shared/dist ./node_modules/@cloud-dock/shared/dist
 RUN pnpm build
 
 WORKDIR /app/packages/web
@@ -41,10 +42,10 @@ ENV NODE_ENV=production
 
 RUN apk add --no-cache nginx
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/nas-client/dist ./dist
-COPY --from=builder /app/packages/nas-client/bin ./bin
-COPY --from=builder /app/packages/web/dist /usr/share/nginx/html
+COPY --from=app-builder /app/node_modules ./node_modules
+COPY --from=app-builder /app/packages/nas-client/dist ./dist
+COPY --from=app-builder /app/packages/nas-client/bin ./bin
+COPY --from=app-builder /app/packages/web/dist /usr/share/nginx/html
 COPY docker/nginx/nas-web.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000 5700
