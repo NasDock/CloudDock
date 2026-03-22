@@ -31,7 +31,6 @@ COPY packages/web/src ./src
 COPY packages/web/index.html ./index.html
 COPY packages/web/public ./public
 COPY packages/web/tsconfig.json ./tsconfig.json
-COPY packages/web/tsconfig.node.json ./tsconfig.node.json
 COPY packages/web/vite.config.ts ./vite.config.ts
 COPY packages/web/postcss.config.js ./postcss.config.js
 COPY packages/web/tailwind.config.js ./tailwind.config.js
