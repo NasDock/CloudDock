@@ -29,7 +29,7 @@ export class ApiClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, deviceName }),
     });
-    return res.json();
+    return res.json() as Promise<ClientLoginResponse>;
   }
 
   async healthCheck(): Promise<boolean> {
