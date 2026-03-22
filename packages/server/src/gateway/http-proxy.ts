@@ -23,6 +23,10 @@ export class HttpProxy {
     const path = rest.join('/') || '/';
 
     // Tunnel proxy request
+    if (!username) {
+      this.reply.status(400).send({ error: 'Invalid username' });
+      return;
+    }
 
     const user = await prisma.user.findFirst({
       where: { username },
