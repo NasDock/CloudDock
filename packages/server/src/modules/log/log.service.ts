@@ -78,8 +78,8 @@ export class LogService {
     path: string;
     statusCode: number;
     responseTime: number;
-    bytesIn?: bigint;
-    bytesOut?: bigint;
+    bytesIn?: number;
+    bytesOut?: number;
   }) {
     await prisma.accessLog.create({
       data: {
@@ -90,8 +90,8 @@ export class LogService {
         path: data.path,
         statusCode: data.statusCode,
         responseTime: data.responseTime,
-        bytesIn: data.bytesIn || 0n,
-        bytesOut: data.bytesOut || 0n,
+        bytesIn: data.bytesIn ?? 0,
+        bytesOut: data.bytesOut ?? 0,
       },
     });
   }
