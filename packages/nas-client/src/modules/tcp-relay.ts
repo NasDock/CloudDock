@@ -40,7 +40,7 @@ export class TcpRelay {
 
       this.server.listen(localListenPort, '127.0.0.1', () => {
         const address = this.server!.address();
-        const port = typeof address === 'object' ? address?.port : 0;
+        const port = typeof address === 'object' ? (address?.port ?? 0) : 0;
         logger.info('TCP relay started', { listenPort: port });
         resolve(port);
       });
