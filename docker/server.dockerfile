@@ -13,6 +13,7 @@ RUN corepack enable && pnpm install --frozen-lockfile
 FROM deps AS shared-builder
 WORKDIR /app/packages/shared
 COPY packages/shared/src ./src
+COPY packages/shared/tsconfig.json ./tsconfig.json
 RUN pnpm build
 
 # Build server
