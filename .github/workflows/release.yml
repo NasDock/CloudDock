@@ -17,6 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Compute image repo (lowercase)
+        id: repo
+        run: echo "image_repo=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -40,8 +44,8 @@ jobs:
           file: docker/server.dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}-server:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}-server:latest
+            ghcr.io/${{ steps.repo.outputs.image_repo }}-server:${{ github.ref_name }}
+            ghcr.io/${{ steps.repo.outputs.image_repo }}-server:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:latest
 
@@ -54,8 +58,8 @@ jobs:
           build-args: |
             VITE_API_URL=http://localhost:3300/api
           tags: |
-            ghcr.io/${{ github.repository }}-edge:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}-edge:latest
+            ghcr.io/${{ steps.repo.outputs.image_repo }}-edge:${{ github.ref_name }}
+            ghcr.io/${{ steps.repo.outputs.image_repo }}-edge:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:latest
 
