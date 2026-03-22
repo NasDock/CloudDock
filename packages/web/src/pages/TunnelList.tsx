@@ -115,7 +115,9 @@ export const TunnelList = () => {
                     tunnel={tunnel}
                     onDelete={handleDelete}
                     onToggle={handleToggle}
-                    deviceName={tunnel.clientId ? clientNameById.get(tunnel.clientId) : undefined}
+                    {...(tunnel.clientId && clientNameById.get(tunnel.clientId)
+                      ? { deviceName: clientNameById.get(tunnel.clientId)! }
+                      : {})}
                   />
                 ))}
               </div>

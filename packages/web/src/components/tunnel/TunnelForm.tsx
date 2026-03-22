@@ -36,7 +36,7 @@ export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clien
           <select
             className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500"
             {...getFieldProps('clientId')}
-            defaultValue={defaultValues?.clientId || clients[0].clientId}
+            defaultValue={defaultValues?.clientId || clients[0]?.clientId || ''}
           >
             {clients.map((client) => (
               <option key={client.clientId} value={client.clientId}>

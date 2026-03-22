@@ -86,7 +86,7 @@ export const authLogout = async (): Promise<void> => {
 
 export const getUserInfo = () => request<UserInfo>('/users/me');
 
-export const updateUserInfo = (data: Partial<Pick<UserInfo, 'username'>>) =>
+export const updateUserInfo = (data: Partial<Pick<UserInfo, 'username'>> & { oldPassword?: string; newPassword?: string }) =>
   request<UserInfo>('/users/me', {
     method: 'PATCH',
     body: JSON.stringify(data),

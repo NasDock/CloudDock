@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -84,7 +84,7 @@ export default http;
 export interface Client {
   clientId: string;
   name: string;
-  status: string;
+  status: 'online' | 'offline' | 'pending' | 'error';
   enabled?: boolean;
   lastSeen: string | null;
   createdAt: string;
@@ -101,8 +101,8 @@ interface ApiResponse<T> {
   error?: { code: string; message: string };
 }
 
-async function requestData<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await http(path, options);
+async function requestData<T>(path: string, options: AxiosRequestConfig = {}): Promise<T> {
+  const response = await http({ url: path, ...options });
   const data: ApiResponse<T> = response.data;
   if (!response.status || !data.success) {
     throw new Error(data.error?.message || 'Request failed');

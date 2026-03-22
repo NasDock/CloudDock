@@ -33,11 +33,9 @@ export const Profile = () => {
     setIsUpdating(true);
     setUpdateError(null);
     try {
-      const res = await updateUserInfo(data);
-      if (res.data.success) {
-        setUpdateSuccess(true);
-        setTimeout(() => setUpdateSuccess(false), 3000);
-      }
+      await updateUserInfo(data);
+      setUpdateSuccess(true);
+      setTimeout(() => setUpdateSuccess(false), 3000);
     } catch (err) {
       setUpdateError('更新失败，请稍后重试');
     } finally {
@@ -49,15 +47,13 @@ export const Profile = () => {
     setIsUpdating(true);
     setUpdateError(null);
     try {
-      const res = await updateUserInfo({
+      await updateUserInfo({
         oldPassword: data.oldPassword,
         newPassword: data.newPassword,
       });
-      if (res.data.success) {
-        setUpdateSuccess(true);
-        passwordForm.reset();
-        setTimeout(() => setUpdateSuccess(false), 3000);
-      }
+      setUpdateSuccess(true);
+      passwordForm.reset();
+      setTimeout(() => setUpdateSuccess(false), 3000);
     } catch (err: any) {
       setUpdateError(err?.response?.data?.error?.message || '密码修改失败');
     } finally {

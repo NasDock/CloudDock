@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Table } from '@/components/ui/Table';
 import { useTunnel, useDeleteTunnel, useTunnelLogs, useSetTunnelEnabled } from '@/hooks/useTunnel';
+import type { AccessLog } from '@/api/tunnel';
 import { formatDate, formatDuration, formatBytes } from '@/utils/formatters';
 
 export const TunnelDetail = () => {
@@ -209,7 +210,7 @@ export const TunnelDetail = () => {
                         },
                         { key: 'responseTime', header: '响应时间', render: (v) => formatDuration(v as number) },
                       ]}
-                      data={logsData.logs.map((log) => ({
+                      data={logsData.logs.map((log: AccessLog) => ({
                         ...log,
                         timestamp: log.timestamp,
                       }))}

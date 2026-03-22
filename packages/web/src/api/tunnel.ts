@@ -1,4 +1,4 @@
-import type { ApiResponse, PaginatedResponse, Tunnel, TunnelStatistics } from '@cloud-dock/shared';
+import type { ApiResponse, Tunnel, TunnelStatistics } from '@cloud-dock/shared';
 import apiClient from './client';
 
 export interface CreateTunnelRequest {
@@ -79,11 +79,20 @@ export interface AccessLog {
   responseTime: number;
 }
 
+export interface AccessLogResponse {
+  logs: AccessLog[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
 export const getTunnelLogs = async (
   tunnelId: string,
   params?: { startTime?: string; endTime?: string; page?: number; limit?: number },
 ) => {
-  return apiClient.get<ApiResponse<PaginatedResponse<AccessLog>>>(
+  return apiClient.get<ApiResponse<AccessLogResponse>>(
     `/tunnels/${tunnelId}/logs`,
     { params },
   );

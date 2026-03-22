@@ -47,7 +47,7 @@ export const TunnelCreate = () => {
                   onSubmit={onSubmit}
                   onCancel={() => navigate('/tunnels')}
                   isLoading={createTunnel.isPending}
-                  clients={clients?.clients}
+                  clients={clients?.clients ?? []}
                 />
               </Card>
             </div>
