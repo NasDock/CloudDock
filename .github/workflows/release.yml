@@ -162,10 +162,7 @@ jobs:
       - name: Package server artifact
         run: |
           tar -czf clouddock-server.tgz \
-            package.json pnpm-lock.yaml pnpm-workspace.yaml \
-            packages/server/package.json \
-            packages/server/dist \
-            packages/server/src/prisma
+            packages/server/dist
 
       - name: Upload server artifact
         uses: appleboy/scp-action@v0.1.7
@@ -190,9 +187,7 @@ jobs:
             tar -xzf /tmp/clouddock-deploy/clouddock-server.tgz -C /tmp/clouddock-deploy/staging
             mkdir -p "${{ secrets.TARGET_DIR }}"
             rm -rf "${{ secrets.TARGET_DIR }}/server"
-            mv /tmp/clouddock-deploy/staging/packages/server "${{ secrets.TARGET_DIR }}/server"
-            cp /tmp/clouddock-deploy/staging/package.json "${{ secrets.TARGET_DIR }}/package.json"
-            cp /tmp/clouddock-deploy/staging/pnpm-lock.yaml "${{ secrets.TARGET_DIR }}/pnpm-lock.yaml"
-            cp /tmp/clouddock-deploy/staging/pnpm-workspace.yaml "${{ secrets.TARGET_DIR }}/pnpm-workspace.yaml"
+            mkdir -p "${{ secrets.TARGET_DIR }}/server"
+            mv /tmp/clouddock-deploy/staging/packages/server/dist "${{ secrets.TARGET_DIR }}/server/dist"
             cd "${{ secrets.TARGET_DIR }}/server"
             bash -lc "${{ secrets.SERVER_RUN_SCRIPT }}"

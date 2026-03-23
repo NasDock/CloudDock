@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:server": "pnpm --filter @cloud-dock/shared... build && pnpm --filter @cloud-dock/server... build",
-    "deploy:server": "bash scripts/deploy-server.sh",
     "docker:server": "docker build -f docker/server.dockerfile -t clouddock-server:latest .",
     "docker:edge": "docker build -f docker/edge.dockerfile -t clouddock-edge:latest ."
   },
