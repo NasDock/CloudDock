@@ -161,7 +161,7 @@ jobs:
 
       - name: Package server artifact
         run: |
-          tar -czf /tmp/clouddock-server.tgz \
+          tar -czf clouddock-server.tgz \
             package.json pnpm-lock.yaml pnpm-workspace.yaml \
             packages/server/package.json \
             packages/server/dist \
@@ -174,7 +174,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
           key: ${{ secrets.SSH_KEY }}
-          source: /tmp/clouddock-server.tgz
+          source: clouddock-server.tgz
           target: /tmp/clouddock-deploy
 
       - name: Deploy server on host
