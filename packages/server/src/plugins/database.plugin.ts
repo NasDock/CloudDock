@@ -1,5 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { PrismaClient, Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
+
+const { PrismaClient, Prisma } = prismaPkg as typeof import('@prisma/client');
 
 declare module 'fastify' {
   interface FastifyInstance {
