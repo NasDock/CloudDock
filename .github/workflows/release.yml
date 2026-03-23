@@ -70,15 +70,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9.12.0
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
       - name: Enable corepack
         run: corepack enable
@@ -86,31 +96,40 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install EAS CLI
-        run: npm i -g eas-cli
+      - name: Build shared package
+        run: pnpm -C packages/shared build
 
-      - name: Build Android APK (EAS)
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Expo Prebuild
         run: |
           cd packages/mobile
-          eas build -p android --profile preview --non-interactive --json > /tmp/eas-build.json
+          npx expo prebuild --platform android --no-install
 
-      - name: Download APK
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Android APK
         run: |
-          url=$(cat /tmp/eas-build.json | jq -r '.[0].artifacts.buildUrl')
-          if [ "$url" = "null" ] || [ -z "$url" ]; then
-            echo "Failed to read buildUrl from EAS output"
-            cat /tmp/eas-build.json
-            exit 1
-          fi
-          curl -L "$url" -o /tmp/cloud-dock.apk
+          cd packages/mobile/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Prepare APK
+        id: prepare_apk
+        run: |
+          VERSION=$(node -p "require('./packages/mobile/app.json').expo.version")
+          OLD_PATH="packages/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          NEW_NAME="cloud-dock-${VERSION}.apk"
+          NEW_PATH="/tmp/${NEW_NAME}"
+          mv "$OLD_PATH" "$NEW_PATH"
+          echo "apk_path=$NEW_PATH" >> $GITHUB_OUTPUT
+          echo "apk_name=$NEW_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload APK to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: /tmp/cloud-dock.apk
+          files: ${{ steps.prepare_apk.outputs.apk_path }}
+
 
   deploy-server:
     runs-on: ubuntu-latest
