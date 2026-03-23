@@ -2,6 +2,9 @@
   "name": "@cloud-dock/server",
   "version": "1.0.0",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "dotenv -e .env -- tsx watch src/index.ts",
     "build": "pnpm db:generate && tsc --project tsconfig.json",
