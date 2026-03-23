@@ -173,6 +173,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
+          key: ${{ secrets.SSH_KEY }}
           source: /tmp/clouddock-server.tgz
           target: /tmp/clouddock-deploy
 
@@ -182,6 +183,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
             mkdir -p /tmp/clouddock-deploy/staging
