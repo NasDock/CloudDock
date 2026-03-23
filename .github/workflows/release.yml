@@ -161,7 +161,7 @@ jobs:
 
       - name: Package server artifact
         run: |
-          pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod
+          pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod --legacy
           tar -czf clouddock-server.tgz -C /tmp/clouddock-server server
 
       - name: Upload server artifact
