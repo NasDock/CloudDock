@@ -162,6 +162,8 @@ jobs:
       - name: Package server artifact
         run: |
           pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod --legacy
+          cd /tmp/clouddock-server/server
+          pnpm dlx prisma@5.22.0 generate --schema=./src/prisma/schema.prisma
           tar -czf clouddock-server.tgz -C /tmp/clouddock-server server
 
       - name: Upload server artifact

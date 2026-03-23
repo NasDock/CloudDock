@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "src/prisma"
   ],
   "scripts": {
     "dev": "dotenv -e .env -- tsx watch src/index.ts",
