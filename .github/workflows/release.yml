@@ -161,8 +161,8 @@ jobs:
 
       - name: Package server artifact
         run: |
-          tar -czf clouddock-server.tgz \
-            packages/server/dist
+          pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod
+          tar -czf clouddock-server.tgz -C /tmp/clouddock-server server
 
       - name: Upload server artifact
         uses: appleboy/scp-action@v0.1.7
@@ -187,7 +187,6 @@ jobs:
             tar -xzf /tmp/clouddock-deploy/clouddock-server.tgz -C /tmp/clouddock-deploy/staging
             mkdir -p "${{ secrets.TARGET_DIR }}"
             rm -rf "${{ secrets.TARGET_DIR }}/server"
-            mkdir -p "${{ secrets.TARGET_DIR }}/server"
-            mv /tmp/clouddock-deploy/staging/packages/server/dist "${{ secrets.TARGET_DIR }}/server/dist"
+            mv /tmp/clouddock-deploy/staging/server "${{ secrets.TARGET_DIR }}/server"
             cd "${{ secrets.TARGET_DIR }}/server"
             bash -lc "${{ secrets.SERVER_RUN_SCRIPT }}"
