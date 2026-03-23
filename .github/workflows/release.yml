@@ -161,10 +161,15 @@ jobs:
 
       - name: Package server artifact
         run: |
+          set -x
           pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod --legacy
           cd /tmp/clouddock-server/server
           pnpm dlx prisma@5.22.0 generate --schema=./src/prisma/schema.prisma
-          tar --warning=no-file-changed --warning=no-file-removed -czf clouddock-server.tgz -C /tmp/clouddock-server server
+          cd /tmp
+          rm -rf /tmp/clouddock-server-tar
+          mkdir -p /tmp/clouddock-server-tar
+          cp -a /tmp/clouddock-server/server /tmp/clouddock-server-tar/server
+          tar -czf clouddock-server.tgz -C /tmp/clouddock-server-tar server
 
       - name: Upload server artifact
         uses: appleboy/scp-action@v0.1.7
