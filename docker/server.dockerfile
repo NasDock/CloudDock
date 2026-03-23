@@ -1,6 +1,7 @@
 FROM node:22-alpine AS base
 
 WORKDIR /app
+RUN apk add --no-cache openssl
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -21,6 +22,7 @@ RUN pnpm build
 FROM deps AS server-builder
 WORKDIR /app/packages/server
 COPY packages/server/src ./src
+COPY packages/server/tsup.config.ts ./tsup.config.ts
 COPY packages/server/tsconfig.json ./tsconfig.json
 COPY packages/server/src/prisma ./prisma
 COPY tsconfig.base.json /app/tsconfig.base.json
