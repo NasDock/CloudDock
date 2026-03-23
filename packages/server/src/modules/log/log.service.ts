@@ -1,7 +1,6 @@
+import { generateLogId, PaginationInput } from '@cloud-dock/shared';
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
-import { PaginationInput } from '@cloud-dock/shared';
-import { generateLogId } from '@cloud-dock/shared';
 
 export class LogService {
   constructor(private fastify: FastifyInstance) {}
@@ -54,7 +53,7 @@ export class LogService {
     ]);
 
     return {
-      logs: logs.map((log) => ({
+      logs: logs.map((log: any) => ({
         logId: log.logId,
         timestamp: log.timestamp.toISOString(),
         clientIp: log.clientIp,

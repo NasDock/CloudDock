@@ -167,7 +167,7 @@ export class AuthService {
         for (const token of tokens) {
           pipeline.setex(`revoked_token:${token.tokenId}`, 86400, '1');
         }
-        pipeline.del(...tokens.map((t) => `refresh_token:${t.tokenId}`));
+        pipeline.del(...tokens.map((t: any) => `refresh_token:${t.tokenId}`));
         await pipeline.exec();
       } catch (err) {
         this.fastify.log.warn({ err }, 'Redis revocation batch failed, continuing with DB only');

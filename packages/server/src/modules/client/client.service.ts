@@ -1,6 +1,5 @@
-import { FastifyInstance } from 'fastify';
-import { prisma } from '../../plugins/database.plugin.js';
 import { nanoid } from 'nanoid';
+import { prisma } from '../../plugins/database.plugin.js';
 
 export class ClientService {
   private generateClientKey(): string {
@@ -14,7 +13,7 @@ export class ClientService {
     });
 
     return {
-      clients: clients.map((c) => ({
+      clients: clients.map((c: any) => ({
         clientId: c.clientId,
         name: c.name,
         status: c.status,

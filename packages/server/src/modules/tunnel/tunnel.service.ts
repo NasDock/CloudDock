@@ -1,6 +1,6 @@
+import { CreateTunnelInput, generateAccessToken, generateTunnelId, TUNNEL_LIMITS, TunnelQueryInput, UpdateTunnelInput } from '@cloud-dock/shared';
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
-import { CreateTunnelInput, UpdateTunnelInput, TunnelQueryInput, generateTunnelId, generateAccessToken, TUNNEL_LIMITS } from '@cloud-dock/shared';
 
 export class TunnelService {
   constructor(private fastify: FastifyInstance) {}
@@ -37,7 +37,7 @@ export class TunnelService {
     ]);
 
     return {
-      tunnels: tunnels.map((t) => ({
+      tunnels: tunnels.map((t: any) => ({
         ...t,
         createdAt: t.createdAt.toISOString(),
         lastHeartbeat: t.lastHeartbeat?.toISOString() || null,
