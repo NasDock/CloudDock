@@ -51,7 +51,9 @@ COPY --from=app-builder /app/packages/nas-client/dist ./dist
 COPY --from=app-builder /app/packages/nas-client/bin ./bin
 COPY --from=app-builder /app/packages/web/dist /usr/share/nginx/html
 COPY docker/nginx/nas-web.conf /etc/nginx/conf.d/default.conf
+COPY docker/edge-entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 3000 5700
 
-CMD ["sh", "-c", "node /app/bin/nas-client.js start & nginx -g 'daemon off;'"]
+CMD ["/app/entrypoint.sh"]

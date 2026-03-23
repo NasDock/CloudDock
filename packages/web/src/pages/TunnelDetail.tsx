@@ -11,6 +11,7 @@ import { Table } from '@/components/ui/Table';
 import { useTunnel, useDeleteTunnel, useTunnelLogs, useSetTunnelEnabled } from '@/hooks/useTunnel';
 import type { AccessLog } from '@/api/tunnel';
 import { formatDate, formatDuration, formatBytes } from '@/utils/formatters';
+import { getPublicBaseUrl } from '@/utils/runtimeConfig';
 
 export const TunnelDetail = () => {
   const { tunnelId } = useParams<{ tunnelId: string }>();
@@ -22,7 +23,7 @@ export const TunnelDetail = () => {
   const { data: logsData } = useTunnelLogs(tunnelId!, { limit: logLimit, page: logPage });
   const deleteTunnel = useDeleteTunnel();
   const toggleTunnel = useSetTunnelEnabled();
-  const baseUrl = (import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin;
+  const baseUrl = getPublicBaseUrl((import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin);
   const fullUrl = tunnel ? `${baseUrl.replace(/\/+$/, '')}${tunnel.publicPath.replace(/\/$/, '')}` : '';
 
   const [deleteModal, setDeleteModal] = useState(false);

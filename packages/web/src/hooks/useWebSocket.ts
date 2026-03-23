@@ -2,8 +2,9 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useTunnelStore } from '@/stores/tunnelStore';
 import { getAccessToken } from '@/api/client';
 import type { WSMessage } from '@cloud-dock/shared';
+import { getWsUrl } from '@/utils/runtimeConfig';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws/device';
+const WS_URL = getWsUrl(import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws/device');
 const HEARTBEAT_INTERVAL = 30_000;
 const HEARTBEAT_TIMEOUT = 10_000;
 

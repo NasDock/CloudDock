@@ -13,12 +13,13 @@ import {
 import { clearTokens, isAuthenticated } from '@/api/client';
 import { clientApi } from '@/api/client';
 import { nasClientApi } from '@/api/nasClient';
+import { getWsUrl } from '@/utils/runtimeConfig';
 
 export const useAuth = () => {
   const { user, isAuthenticated: storeAuth, setUser, setLoading, logout: storeLogout } = useAuthStore();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const serverWsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3300/ws/device';
+  const serverWsUrl = getWsUrl(import.meta.env.VITE_WS_URL || 'ws://localhost:3300/ws/device');
 
   const setupNasClient = async () => {
     try {

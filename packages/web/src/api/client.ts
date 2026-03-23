@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, type AxiosRequestConfig } from 'axios';
+import { getApiUrl } from '@/utils/runtimeConfig';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const BASE_URL = getApiUrl(import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 
 // Axios instance for API calls
 const http: AxiosInstance = axios.create({

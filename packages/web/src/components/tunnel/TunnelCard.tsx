@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { Tunnel } from '@cloud-dock/shared';
+import { getPublicBaseUrl } from '@/utils/runtimeConfig';
 
 interface TunnelCardProps {
   tunnel: Tunnel;
@@ -17,7 +18,7 @@ export const TunnelCard = ({ tunnel, onDelete, onToggle, deviceName }: TunnelCar
     tcp: 'TCP',
     udp: 'UDP',
   };
-  const baseUrl = (import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin;
+  const baseUrl = getPublicBaseUrl((import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin);
   const fullUrl = `${baseUrl.replace(/\/+$/, '')}${tunnel.publicPath.replace(/\/$/, '')}`;
   const [copied, setCopied] = useState(false);
 
