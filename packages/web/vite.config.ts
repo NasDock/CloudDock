@@ -7,14 +7,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      'use-sync-external-store/with-selector': resolve(
-        __dirname,
-        './src/shims/useSyncExternalStoreWithSelector.ts'
-      ),
-      'use-sync-external-store/with-selector.js': resolve(
-        __dirname,
-        './src/shims/useSyncExternalStoreWithSelector.ts'
-      ),
     },
   },
   server: {

@@ -47,6 +47,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache nginx
 
 COPY --from=app-builder /app/node_modules ./node_modules
+COPY packages/nas-client/package.json ./package.json
 COPY --from=app-builder /app/packages/nas-client/dist ./dist
 COPY --from=app-builder /app/packages/nas-client/bin ./bin
 COPY --from=app-builder /app/packages/web/dist /usr/share/nginx/html
