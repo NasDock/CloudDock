@@ -108,7 +108,7 @@ jobs:
           mkdir -p packages/mobile/android/app/src/main/java/expo/core
           cat > packages/mobile/android/app/src/main/java/expo/core/ExpoModulesPackage.java <<'EOF'
           package expo.core;
-          public class ExpoModulesPackage extends expo.modules.core.ExpoModulesPackage {}
+          public class ExpoModulesPackage extends expo.modules.ExpoModulesPackage {}
           EOF
 
       - name: Setup Gradle
