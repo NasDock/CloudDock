@@ -50,7 +50,8 @@ COPY --from=app-builder /app/node_modules ./node_modules
 COPY --from=app-builder /app/packages/nas-client/dist ./dist
 COPY --from=app-builder /app/packages/nas-client/bin ./bin
 COPY --from=app-builder /app/packages/web/dist /usr/share/nginx/html
-COPY docker/nginx/nas-web.conf /etc/nginx/conf.d/default.conf
+COPY docker/edge-nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/edge-nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/edge-entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
