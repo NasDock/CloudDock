@@ -39,6 +39,10 @@ ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 RUN pnpm build
 
+# Prepare a standalone deploy for nas-client (includes node_modules)
+WORKDIR /app
+RUN pnpm --filter @cloud-dock/nas-client deploy /app/nas-client-deploy --prod --legacy
+
 FROM base AS runner
 WORKDIR /app
 
@@ -46,10 +50,10 @@ ENV NODE_ENV=production
 
 RUN apk add --no-cache nginx
 
-COPY --from=app-builder /app/node_modules ./node_modules
-COPY packages/nas-client/package.json ./package.json
-COPY --from=app-builder /app/packages/nas-client/dist ./dist
-COPY --from=app-builder /app/packages/nas-client/bin ./bin
+COPY --from=app-builder /app/nas-client-deploy/node_modules ./node_modules
+COPY --from=app-builder /app/nas-client-deploy/package.json ./package.json
+COPY --from=app-builder /app/nas-client-deploy/dist ./dist
+COPY --from=app-builder /app/nas-client-deploy/bin ./bin
 COPY --from=app-builder /app/packages/web/dist /usr/share/nginx/html
 COPY docker/edge-nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/edge-nginx/default.conf /etc/nginx/conf.d/default.conf
