@@ -108,7 +108,25 @@ jobs:
           mkdir -p packages/mobile/android/app/src/main/java/expo/core
           cat > packages/mobile/android/app/src/main/java/expo/core/ExpoModulesPackage.java <<'EOF'
           package expo.core;
-          public class ExpoModulesPackage extends expo.modules.ExpoModulesPackage {}
+          import com.facebook.react.ReactPackage;
+          import com.facebook.react.bridge.NativeModule;
+          import com.facebook.react.bridge.ReactApplicationContext;
+          import com.facebook.react.uimanager.ViewManager;
+          import java.util.List;
+
+          public final class ExpoModulesPackage implements ReactPackage {
+            private final expo.modules.ExpoModulesPackage delegate = new expo.modules.ExpoModulesPackage();
+
+            @Override
+            public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
+              return delegate.createNativeModules(reactContext);
+            }
+
+            @Override
+            public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+              return delegate.createViewManagers(reactContext);
+            }
+          }
           EOF
 
       - name: Setup Gradle
