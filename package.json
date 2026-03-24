@@ -7,6 +7,6 @@
     "docker:edge": "docker build -f docker/edge.dockerfile -t clouddock-edge:latest ."
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["bcrypt", "@prisma/client", "@prisma/engines", "esbuild", "prisma"]
+    "onlyBuiltDependencies": ["bcrypt", "@prisma/client", "@prisma/engines", "esbuild", "prisma", "wrtc"]
   }
 }

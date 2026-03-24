@@ -2,11 +2,13 @@ import { buildApp } from './app.js';
 import { config } from './config/index.js';
 import { registerWSServer } from './gateway/ws-server-holder.js';
 import { WSServer } from './gateway/ws-server.js';
+import { SignalServer } from './gateway/signal-server.js';
 
 async function main() {
   const fastify = await buildApp();
 
   const wsServer = new WSServer(fastify);
+  const signalServer = new SignalServer(fastify);
   fastify.decorate('wsServer', wsServer);
   registerWSServer(wsServer);
 
@@ -29,6 +31,7 @@ async function main() {
   console.log('[index] HTTP server listening, starting WS...');
   try {
     await wsServer.start(fastify.server);
+    await signalServer.start(fastify.server);
     console.log('[index] WS server started');
   } catch (err) {
     console.error('[index] WS start error:', err);

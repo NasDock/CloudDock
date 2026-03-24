@@ -7,6 +7,7 @@ import { TunnelManager } from './modules/tunnel-manager.js';
 import { request as httpRequest } from 'http';
 import { request as httpsRequest } from 'https';
 import { URL } from 'url';
+import { WebRTCManager } from './webrtc/webrtc-manager.js';
 
 export interface ClientStatus {
   connected: boolean;
@@ -38,6 +39,8 @@ export class NASClient extends EventEmitter {
   private serverUrl: string;
   private sessionId?: string;
   private clientKey?: string;
+  private deviceId?: string;
+  private webrtcManager?: WebRTCManager;
   private pendingPairingResolve?: (key: string) => void;
   private pendingPairingReject?: (err: Error) => void;
 
@@ -198,7 +201,22 @@ export class NASClient extends EventEmitter {
     logger.info('Auth success', data);
     this.status.connected = true;
     this.status.reconnectAttempts = 0;
+    this.deviceId = data.clientId;
+    this.startWebRTCSignal();
     this.emit('auth_success', data);
+  }
+
+  private startWebRTCSignal(): void {
+    if (!this.deviceId || !this.clientKey) return;
+    if (this.webrtcManager) return;
+    this.webrtcManager = new WebRTCManager({
+      serverUrl: this.serverUrl,
+      deviceId: this.deviceId,
+      clientKey: this.clientKey,
+    });
+    this.webrtcManager.start().catch((err) => {
+      logger.warn('WebRTC manager failed to start, fallback to tunnel', { error: err?.message || err });
+    });
   }
 
   private handleTunnelsSync(tunnels: TunnelInfo[]): void {
@@ -337,6 +355,25 @@ export class NASClient extends EventEmitter {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
+  }
+
+  // Large data path: prefer WebRTC, fallback to existing tunnel
+  async sendLargeData(data: Buffer): Promise<boolean> {
+    if (this.webrtcManager?.isReady()) {
+      const ok = await this.webrtcManager.sendLargePayload(data);
+      if (ok) return true;
+    }
+    logger.warn('WebRTC not ready, fallback to tunnel', { size: data.length });
+    return false;
+  }
+
+  async sendLargeDataWithFallback(
+    data: Buffer,
+    fallback: () => Promise<boolean>
+  ): Promise<boolean> {
+    const ok = await this.sendLargeData(data);
+    if (ok) return true;
+    return fallback();
   }
 
   updateConnectionConfig(updates: Partial<NASConfig>): void {
