@@ -8,7 +8,8 @@ import type {
   WebRTCFileMeta,
 } from '@cloud-dock/shared';
 import { SignalClient } from './signal-client.js';
-import { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from 'wrtc';
+import wrtc from 'wrtc';
+const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc as any;
 
 export interface WebRTCManagerOptions {
   serverUrl: string;
