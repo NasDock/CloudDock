@@ -4,6 +4,13 @@ import type { UserPublic } from '@cloud-dock/shared';
 import { authApi } from '../api/auth';
 import { initApiBaseUrl } from '../api/client';
 
+function maskEmail(email: string): string {
+  const [name, domain] = email.split('@');
+  if (!domain) return email.slice(0, 1) + '***';
+  const safeName = name.length <= 2 ? `${name[0] || ''}*` : `${name[0]}***${name[name.length - 1]}`;
+  return `${safeName}@${domain}`;
+}
+
 interface AuthState {
   user: UserPublic | null;
   isAuthenticated: boolean;
@@ -27,6 +34,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
+    const safeEmail = maskEmail(email);
+    console.info('[auth] login: start', {
+      email: safeEmail,
+      hasPassword: !!password,
+      passwordLength: password?.length ?? 0,
+    });
     try {
       await initApiBaseUrl();
       const response = await authApi.login({ email, password });
@@ -36,10 +49,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Fetch user info
       const user = await authApi.getMe();
       set({ user, isAuthenticated: true, isLoading: false });
+      console.info('[auth] login: success', { email: safeEmail, userId: user.userId });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       const message = err.response?.data?.error?.message || err.message || 'Login failed';
       set({ error: message, isLoading: false });
+      console.error('[auth] login: failed', { email: safeEmail, message });
       throw error;
     }
   },

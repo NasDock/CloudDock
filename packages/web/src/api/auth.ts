@@ -21,7 +21,7 @@ export interface UserInfo {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const BASE_URL = getApiUrl(import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+  const BASE_URL = getApiUrl(import.meta.env.VITE_API_URL || 'https://cloud.audiodock.cn/api');
   const token = getAccessToken();
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,

@@ -1,15 +1,15 @@
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import fp from 'fastify-plugin';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
 import { config } from '../config/index.js';
 
 const swaggerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(swagger, {
     openapi: {
       info: {
-        title: 'NAT Tunnel API',
-        description: 'API documentation for NAT Tunnel service',
+        title: 'CloudDock API',
+        description: 'API documentation for CloudDock service',
         version: '1.0.0',
       },
       servers: [

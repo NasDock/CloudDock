@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'NAT Tunnel'
+rootProject.name = 'CloudDock'
 
 dependencyResolutionManagement {
   versionCatalogs {

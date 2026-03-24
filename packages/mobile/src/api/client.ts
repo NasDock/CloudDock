@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEFAULT_API_BASE_URL = 'https://cloud.audiodock.cn/api';
+const DEFAULT_API_BASE_URL = 'https://cloud.audiodock.cn';
 const API_BASE_URL_KEY = 'apiBaseUrl';
 let apiBaseUrl = DEFAULT_API_BASE_URL;
 

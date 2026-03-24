@@ -1,7 +1,7 @@
-import { config } from './config/index.js';
 import { buildApp } from './app.js';
-import { WSServer } from './gateway/ws-server.js';
+import { config } from './config/index.js';
 import { registerWSServer } from './gateway/ws-server-holder.js';
+import { WSServer } from './gateway/ws-server.js';
 
 async function main() {
   const fastify = await buildApp();
@@ -17,7 +17,7 @@ async function main() {
 
   console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
-║                    NAT Tunnel Server                           ║
+║                    CloudDock Server                           ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  HTTP Server:  http://${config.HOST}:${config.PORT}                         
 ║  WebSocket:    ws://${config.HOST}:${config.PORT}/ws/device                   

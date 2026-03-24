@@ -55,8 +55,6 @@ jobs:
           context: .
           file: docker/edge.dockerfile
           push: true
-          build-args: |
-            VITE_API_URL=http://localhost:3300/api
           tags: |
             ghcr.io/${{ steps.repo.outputs.image_repo }}-edge:${{ github.ref_name }}
             ghcr.io/${{ steps.repo.outputs.image_repo }}-edge:latest

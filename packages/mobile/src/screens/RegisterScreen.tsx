@@ -1,75 +1,75 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Text, Snackbar } from 'react-native-paper';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
-import { LoadingOverlay } from '../components/ui/LoadingOverlay';
-import { useAuth } from '../hooks/useAuth';
-import { initApiBaseUrl, setApiBaseUrl, DEFAULT_API_BASE_URL } from '../api/client';
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { Snackbar, Text } from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { DEFAULT_API_BASE_URL, initApiBaseUrl, setApiBaseUrl } from '../api/client'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { LoadingOverlay } from '../components/ui/LoadingOverlay'
+import { useAuth } from '../hooks/useAuth'
 
 export default function RegisterScreen() {
-  const router = useRouter();
-  const { auth, register, clearError } = useAuth();
+  const router = useRouter()
+  const { auth, register, clearError } = useAuth()
 
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [serverUrl, setServerUrl] = useState('https://cloud.audiodock.cn');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [serverUrl, setServerUrl] = useState('https://cloud.audiodock.cn')
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     initApiBaseUrl().then((base) => {
-      const trimmed = base.replace(/\/api$/i, '');
-      setServerUrl(trimmed || 'https://cloud.audiodock.cn');
-    });
-  }, []);
+      const trimmed = base.replace(/\/api$/i, '')
+      setServerUrl(trimmed || 'https://cloud.audiodock.cn')
+    })
+  }, [])
 
   const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {}
 
     if (!username.trim()) {
-      newErrors.username = '请输入用户名';
+      newErrors.username = '请输入用户名'
     } else if (username.trim().length < 2) {
-      newErrors.username = '用户名至少2个字符';
+      newErrors.username = '用户名至少2个字符'
     }
 
     if (!email.trim()) {
-      newErrors.email = '请输入邮箱';
+      newErrors.email = '请输入邮箱'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      newErrors.email = '请输入有效的邮箱地址';
+      newErrors.email = '请输入有效的邮箱地址'
     }
 
     if (!password) {
-      newErrors.password = '请输入密码';
+      newErrors.password = '请输入密码'
     } else if (password.length < 8) {
-      newErrors.password = '密码至少8个字符';
+      newErrors.password = '密码至少8个字符'
     }
 
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = '两次输入的密码不一致';
+      newErrors.confirmPassword = '两次输入的密码不一致'
     }
     if (!serverUrl.trim()) {
-      newErrors.serverUrl = '请输入服务器地址';
+      newErrors.serverUrl = '请输入服务器地址'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleRegister = async () => {
-    if (!validate()) return;
+    if (!validate()) return
 
     try {
-      setApiBaseUrl(serverUrl.trim() || DEFAULT_API_BASE_URL);
-      await register(email.trim(), password, username.trim());
-      router.replace('/');
+      setApiBaseUrl(serverUrl.trim() || DEFAULT_API_BASE_URL)
+      await register(email.trim(), password, username.trim())
+      router.replace('/')
     } catch {
       // Error handled by store
     }
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,13 +77,22 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="always">
           <View style={styles.header}>
             <Text style={styles.title}>创建账号</Text>
-            <Text style={styles.subtitle}>开始使用 NAT Tunnel</Text>
+            <Text style={styles.subtitle}>开始使用 CloudDock</Text>
           </View>
 
           <View style={styles.form}>
+            <Input
+              label="服务器地址"
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              placeholder="https://cloud.audiodock.cn"
+              autoCapitalize="none"
+              error={errors.serverUrl}
+            />
+
             <Input
               label="用户名"
               value={username}
@@ -121,24 +130,11 @@ export default function RegisterScreen() {
               error={errors.confirmPassword}
             />
 
-            <Input
-              label="服务器地址"
-              value={serverUrl}
-              onChangeText={setServerUrl}
-              placeholder="https://cloud.audiodock.cn"
-              autoCapitalize="none"
-              error={errors.serverUrl}
-            />
-
             <Button onPress={handleRegister} loading={auth.isLoading} disabled={auth.isLoading}>
               注册
             </Button>
 
-            <Button
-              onPress={() => router.back()}
-              mode="outlined"
-              disabled={auth.isLoading}
-            >
+            <Button onPress={() => router.back()} mode="outlined" disabled={auth.isLoading}>
               已有账号？去登录
             </Button>
           </View>
@@ -156,7 +152,7 @@ export default function RegisterScreen() {
 
       <LoadingOverlay visible={auth.isLoading} message="注册中..." />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -192,4 +188,4 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: '#EF4444',
   },
-});
+})

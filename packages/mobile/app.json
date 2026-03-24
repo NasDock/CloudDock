@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "NAT Tunnel",
+    "name": "CloudDock",
     "slug": "nat-tunnel",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#6366F1"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.nattunnel.app"
@@ -23,7 +25,10 @@
         "backgroundColor": "#6366F1"
       },
       "package": "com.nattunnel.app",
-      "permissions": ["CAMERA", "NOTIFICATIONS"]
+      "permissions": [
+        "CAMERA",
+        "NOTIFICATIONS"
+      ]
     },
     "plugins": [
       [
@@ -38,7 +43,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow NAT Tunnel to access your camera for scanning QR codes."
+          "cameraPermission": "Allow CloudDock to access your camera for scanning QR codes."
         }
       ],
       [

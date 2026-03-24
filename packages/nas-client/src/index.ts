@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-import { NASClient } from './client.js';
-import { logger } from './utils/logger.js';
-import { loadConfig, saveConfig } from './utils/config-store.js';
 import type { ClientStatus } from './client.js';
+import { NASClient } from './client.js';
 import { startLocalApi } from './local-api.js';
+import { loadConfig } from './utils/config-store.js';
 
 // ANSI colors
 const colors = {
@@ -45,7 +44,7 @@ class CLI {
     const config = loadConfig();
 
     console.log(c('cyan', '╔══════════════════════════════════════╗'));
-    console.log(c('cyan', '║       NAS Client - NAT Tunnel         ║'));
+    console.log(c('cyan', '║       NAS Client - CloudDock         ║'));
     console.log(c('cyan', '╚══════════════════════════════════════╝'));
     console.log();
 

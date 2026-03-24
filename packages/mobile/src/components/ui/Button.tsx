@@ -25,7 +25,14 @@ export function Button({
   textStyle,
   variant = 'primary',
 }: ButtonProps) {
-  const buttonColor = variant === 'primary' ? '#6366F1' : variant === 'danger' ? '#EF4444' : undefined;
+  const isFilled = mode === 'contained' || mode === 'contained-tonal' || mode === 'elevated';
+  const buttonColor = isFilled
+    ? variant === 'primary'
+      ? '#6366F1'
+      : variant === 'danger'
+        ? '#EF4444'
+        : undefined
+    : undefined;
 
   return (
     <PaperButton

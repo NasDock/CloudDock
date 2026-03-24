@@ -1,67 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ScrollView, RefreshControl } from 'react-native';
-import { Text, FAB, Snackbar } from 'react-native-paper';
-import { useRouter, Redirect } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Header } from '../../components/layout/Header';
-import { Card } from '../../components/ui/Card';
-import { StatusBadge } from '../../components/ui/StatusBadge';
-import { TunnelCard } from '../../components/tunnel/TunnelCard';
-import { LoadingOverlay } from '../../components/ui/LoadingOverlay';
-import { useAuth } from '../../hooks/useAuth';
-import { useTunnel } from '../../hooks/useTunnel';
-import { usePushNotification } from '../../hooks/usePushNotification';
-import { tunnelApi } from '../../api/tunnel';
-import { deviceApi } from '../../api/device';
+import { Redirect, useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
+import { FAB, Snackbar, Text } from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { deviceApi } from '../../api/device'
+import { tunnelApi } from '../../api/tunnel'
+import { Header } from '../../components/layout/Header'
+import { TunnelCard } from '../../components/tunnel/TunnelCard'
+import { Card } from '../../components/ui/Card'
+import { LoadingOverlay } from '../../components/ui/LoadingOverlay'
+import { StatusBadge } from '../../components/ui/StatusBadge'
+import { useAuth } from '../../hooks/useAuth'
+import { usePushNotification } from '../../hooks/usePushNotification'
+import { useTunnel } from '../../hooks/useTunnel'
 
 export default function DashboardScreen() {
-  const router = useRouter();
-  const { auth, logout } = useAuth();
-  const { tunnels, onlineTunnels, offlineTunnels, isLoading, refresh } = useTunnel();
+  const router = useRouter()
+  const { auth, logout } = useAuth()
+  const { tunnels, onlineTunnels, offlineTunnels, isLoading, refresh } = useTunnel()
 
-  usePushNotification();
+  usePushNotification()
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [clientNames, setClientNames] = useState<Record<string, string>>({});
+  const [refreshing, setRefreshing] = useState(false)
+  const [logoutError, setLogoutError] = useState<string | null>(null)
+  const [clientNames, setClientNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     deviceApi
       .list()
       .then((res) => {
-        const map: Record<string, string> = {};
+        const map: Record<string, string> = {}
         res.clients.forEach((c) => {
-          map[c.clientId] = c.name || '默认设备';
-        });
-        setClientNames(map);
+          map[c.clientId] = c.name || '默认设备'
+        })
+        setClientNames(map)
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+  }, [])
 
   // Redirect if not logged in
   if (!auth.isAuthenticated && !auth.isLoading) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href="/(auth)/login" />
   }
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
-  };
+    setRefreshing(true)
+    await refresh()
+    setRefreshing(false)
+  }
 
   const handleLogout = async () => {
     try {
-      await logout();
-      router.replace('/(auth)/login');
+      await logout()
+      router.replace('/(auth)/login')
     } catch {
-      setLogoutError('登出失败');
+      setLogoutError('登出失败')
     }
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Header
-        title="NAT Tunnel"
+        title="CloudDock"
         subtitle={auth.user?.username}
         right={
           <View style={styles.headerRight}>
@@ -112,24 +112,30 @@ export default function DashboardScreen() {
               </View>
             </Card>
           ) : (
-            tunnels.slice(0, 3).map((tunnel) => (
-              <TunnelCard
-                key={tunnel.tunnelId}
-                tunnel={tunnel}
-                publicUrl={tunnelApi.getPublicUrl(tunnel.publicPath)}
-                deviceName={tunnel.clientId ? (clientNames[tunnel.clientId] || '默认设备') : '默认设备'}
-                onPress={() => router.push({ pathname: '/tunnel-detail', params: { tunnelId: tunnel.tunnelId } })}
-              />
-            ))
+            tunnels
+              .slice(0, 3)
+              .map((tunnel) => (
+                <TunnelCard
+                  key={tunnel.tunnelId}
+                  tunnel={tunnel}
+                  publicUrl={tunnelApi.getPublicUrl(tunnel.publicPath)}
+                  deviceName={
+                    tunnel.clientId ? clientNames[tunnel.clientId] || '默认设备' : '默认设备'
+                  }
+                  onPress={() =>
+                    router.push({
+                      pathname: '/tunnel-detail',
+                      params: { tunnelId: tunnel.tunnelId },
+                    })
+                  }
+                />
+              ))
           )}
         </View>
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Card
-            onPress={() => router.push('/profile')}
-            style={styles.accountCard}
-          >
+          <Card onPress={() => router.push('/profile')} style={styles.accountCard}>
             <View style={styles.accountInfo}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
@@ -161,7 +167,7 @@ export default function DashboardScreen() {
         {logoutError}
       </Snackbar>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -281,4 +287,4 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: '#EF4444',
   },
-});
+})

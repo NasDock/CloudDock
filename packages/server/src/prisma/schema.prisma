@@ -1,4 +1,4 @@
-// Prisma Schema for NAT Tunnel Server (SQLite)
+// Prisma Schema for CloudDock Server (SQLite)
 
 generator client {
   provider = "prisma-client-js"
@@ -19,7 +19,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   tunnels       Tunnel[]
-  clients      Client[]
+  clients       Client[]
   refreshTokens RefreshToken[]
 
   @@map("users")
@@ -28,19 +28,19 @@ model User {
 // Client = NAS client instance, identified by clientKey
 // One user can have multiple clients
 model Client {
-  clientId    String    @id @default(cuid())
-  clientKey   String    @unique @map("client_key")
-  userId      String    @map("user_id")
-  name        String
-  isDefault   Boolean   @default(false) @map("is_default")
-  enabled     Boolean   @default(true) @map("is_enabled")
-  status      String    @default("offline")
-  lastSeen    DateTime? @map("last_seen")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  clientId  String    @id @default(cuid())
+  clientKey String    @unique @map("client_key")
+  userId    String    @map("user_id")
+  name      String
+  isDefault Boolean   @default(false) @map("is_default")
+  enabled   Boolean   @default(true) @map("is_enabled")
+  status    String    @default("offline")
+  lastSeen  DateTime? @map("last_seen")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
-  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  tunnels     Tunnel[]
+  user    User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  tunnels Tunnel[]
 
   @@index([userId])
   @@index([clientKey])
@@ -61,14 +61,14 @@ model Tunnel {
   status        String    @default("offline")
   accessToken   String?   @map("access_token")
   publicPath    String    @map("public_path")
-  ipWhitelist   String   @default("[]")
+  ipWhitelist   String    @default("[]")
   metadata      String?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   lastHeartbeat DateTime? @map("last_heartbeat")
 
-  user       User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  client     Client?    @relation(fields: [clientId], references: [clientId], onDelete: SetNull)
+  user       User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  client     Client?     @relation(fields: [clientId], references: [clientId], onDelete: SetNull)
   accessLogs AccessLog[]
 
   @@index([userId])
@@ -78,18 +78,18 @@ model Tunnel {
 }
 
 model AccessLog {
-  logId         String   @id @default(cuid())
-  tunnelId      String   @map("tunnel_id")
-  timestamp     DateTime @default(now())
-  clientIp      String   @map("client_ip")
-  method        String
-  path          String
-  statusCode    Int      @map("status_code")
-  responseTime  Int      @map("response_time")
-  bytesIn       Int      @map("bytes_in") @default(0)
-  bytesOut      Int      @map("bytes_out") @default(0)
+  logId        String   @id @default(cuid())
+  tunnelId     String   @map("tunnel_id")
+  timestamp    DateTime @default(now())
+  clientIp     String   @map("client_ip")
+  method       String
+  path         String
+  statusCode   Int      @map("status_code")
+  responseTime Int      @map("response_time")
+  bytesIn      Int      @default(0) @map("bytes_in")
+  bytesOut     Int      @default(0) @map("bytes_out")
 
-  tunnel        Tunnel   @relation(fields: [tunnelId], references: [tunnelId], onDelete: Cascade)
+  tunnel Tunnel @relation(fields: [tunnelId], references: [tunnelId], onDelete: Cascade)
 
   @@index([tunnelId, timestamp])
   @@map("access_logs")
