@@ -123,8 +123,9 @@ jobs:
             }
 
             @Override
+            @SuppressWarnings({"rawtypes", "unchecked"})
             public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-              return delegate.createViewManagers(reactContext);
+              return (List) delegate.createViewManagers(reactContext);
             }
           }
           EOF
