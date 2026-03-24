@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS base
 
 WORKDIR /app
 
@@ -48,7 +48,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN apk add --no-cache nginx
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends nginx \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=app-builder /app/nas-client-deploy/node_modules ./node_modules
 COPY --from=app-builder /app/nas-client-deploy/package.json ./package.json
