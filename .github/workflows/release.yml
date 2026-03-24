@@ -169,7 +169,8 @@ jobs:
           rm -rf /tmp/clouddock-server-tar
           mkdir -p /tmp/clouddock-server-tar
           cp -a /tmp/clouddock-server/server /tmp/clouddock-server-tar/server
-          tar -czf clouddock-server.tgz -C /tmp/clouddock-server-tar server
+          tar -czf /tmp/clouddock-server.tgz -C /tmp/clouddock-server-tar server
+          cp /tmp/clouddock-server.tgz "$GITHUB_WORKSPACE/clouddock-server.tgz"
 
       - name: Upload server artifact
         uses: appleboy/scp-action@v0.1.7
