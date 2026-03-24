@@ -89,9 +89,15 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Enable corepack
         run: corepack enable
+
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir "$GITHUB_WORKSPACE/.pnpm-store"
+          mkdir -p "$GITHUB_WORKSPACE/.pnpm-store"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -173,9 +179,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Enable corepack
         run: corepack enable
+
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir "$GITHUB_WORKSPACE/.pnpm-store"
+          mkdir -p "$GITHUB_WORKSPACE/.pnpm-store"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
