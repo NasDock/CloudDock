@@ -88,8 +88,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Enable corepack
         run: corepack enable
@@ -179,8 +177,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Enable corepack
         run: corepack enable
