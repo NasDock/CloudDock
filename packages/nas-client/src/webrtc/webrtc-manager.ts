@@ -20,7 +20,7 @@ export interface WebRTCManagerOptions {
 export class WebRTCManager {
   private signalClient: SignalClient;
   private ready = false;
-  private pc: RTCPeerConnection | null = null;
+  private pc: any | null = null;
   private dataChannel: any | null = null;
   private deviceId: string;
   private readonly chunkSize = 32 * 1024;
