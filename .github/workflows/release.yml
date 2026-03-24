@@ -103,6 +103,13 @@ jobs:
         run: |
           cd packages/mobile
           npx expo prebuild --platform android --no-install
+      - name: Patch ExpoModulesPackage shim
+        run: |
+          mkdir -p packages/mobile/android/app/src/main/java/expo/core
+          cat > packages/mobile/android/app/src/main/java/expo/core/ExpoModulesPackage.java <<'EOF'
+          package expo.core;
+          public class ExpoModulesPackage extends expo.modules.core.ExpoModulesPackage {}
+          EOF
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
