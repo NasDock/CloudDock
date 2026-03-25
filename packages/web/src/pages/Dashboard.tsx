@@ -1,18 +1,17 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTunnels } from '@/hooks/useTunnel';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { Link } from 'react-router-dom';
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const { connect } = useWebSocket();
+  const { connect, isConnected: wsConnected } = useWebSocket();
   const { data: tunnelData, isLoading } = useTunnels({ limit: 5 });
 
   useEffect(() => {

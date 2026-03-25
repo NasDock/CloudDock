@@ -6,6 +6,8 @@ import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useTunnels, useDeleteTunnel, useSetTunnelEnabled } from '@/hooks/useTunnel';
 import { useQuery } from '@tanstack/react-query';
 import { clientApi } from '@/api/client';
