@@ -1,14 +1,12 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { LogController } from './log.controller.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
-import { requireApprovedRequestDevice } from '../../middleware/request-device.middleware.js';
 
 const logRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const controller = new LogController(fastify);
 
   // Apply authentication to all routes
   fastify.addHook('preHandler', authenticate);
-  fastify.addHook('preHandler', requireApprovedRequestDevice);
 
   fastify.get('/tunnels/:tunnelId/logs', {
     schema: {

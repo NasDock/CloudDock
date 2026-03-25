@@ -1,7 +1,8 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { connectionPool } from './connection-pool.js';
 import { prisma } from '../plugins/database.plugin.js';
-import { generateLogId } from '@cloud-dock/shared';
+import { generateLogId, ErrorCodes } from '@cloud-dock/shared';
+import { upsertRequestDeviceForUser } from '../middleware/request-device.middleware.js';
 
 export class HttpProxy {
   constructor(
@@ -55,6 +56,30 @@ export class HttpProxy {
 
     if (!connectionPool.isTunnelOnline(tunnel.tunnelId)) {
       this.reply.status(502).send({ error: 'Tunnel is offline' });
+      return;
+    }
+
+    const { device, deviceId } = await upsertRequestDeviceForUser(user.userId, this.request);
+    if (device.status === 'blocked') {
+      this.reply.status(403).send({
+        success: false,
+        error: {
+          code: ErrorCodes.DEVICE_BLOCKED,
+          message: 'Device is blocked',
+          details: { deviceId, status: device.status },
+        },
+      });
+      return;
+    }
+    if (device.status === 'pending') {
+      this.reply.status(403).send({
+        success: false,
+        error: {
+          code: ErrorCodes.DEVICE_PENDING,
+          message: 'Device pending approval',
+          details: { deviceId, status: device.status },
+        },
+      });
       return;
     }
 

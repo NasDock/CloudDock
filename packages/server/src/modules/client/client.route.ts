@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { ClientService } from './client.service.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
-import { requireApprovedRequestDevice } from '../../middleware/request-device.middleware.js';
 
 // Pairing storage: code -> { userId, userName, createdAt }
 // Shared between HTTP routes and WS server via a singleton
@@ -23,7 +22,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const service = new ClientService();
 
   fastify.addHook('preHandler', authenticate);
-  fastify.addHook('preHandler', requireApprovedRequestDevice);
 
   // List user's clients
   fastify.get('/', async (request, reply) => {

@@ -1,11 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
-import { requireApprovedRequestDevice } from '../../middleware/request-device.middleware.js';
 
 const requestDeviceRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // List request devices
-  fastify.get('/', { preHandler: [authenticate, requireApprovedRequestDevice] }, async (request) => {
+  fastify.get('/', { preHandler: [authenticate] }, async (request) => {
     const userId = (request.user as any).userId || (request.user as any).sub;
     const devices = await prisma.requestDevice.findMany({
       where: { userId },
@@ -16,7 +15,7 @@ const requestDeviceRoute: FastifyPluginAsync = async (fastify: FastifyInstance) 
   });
 
   // Update status (approve/block)
-  fastify.patch('/:deviceId', { preHandler: [authenticate, requireApprovedRequestDevice] }, async (request, reply) => {
+  fastify.patch('/:deviceId', { preHandler: [authenticate] }, async (request, reply) => {
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { deviceId } = request.params as { deviceId: string };
     const { status } = request.body as { status: 'approved' | 'blocked' };
@@ -41,7 +40,7 @@ const requestDeviceRoute: FastifyPluginAsync = async (fastify: FastifyInstance) 
   });
 
   // Delete device
-  fastify.delete('/:deviceId', { preHandler: [authenticate, requireApprovedRequestDevice] }, async (request, reply) => {
+  fastify.delete('/:deviceId', { preHandler: [authenticate] }, async (request, reply) => {
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { deviceId } = request.params as { deviceId: string };
 

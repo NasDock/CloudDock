@@ -15,14 +15,7 @@ function deriveDeviceId(request: FastifyRequest): string {
   return `rd_${hash}`;
 }
 
-export async function requireApprovedRequestDevice(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
-  const user = request.user as any;
-  const userId = user?.userId ?? user?.sub;
-  if (!userId) return;
-
+export async function upsertRequestDeviceForUser(userId: string, request: FastifyRequest) {
   const headerDeviceId = request.headers[HEADER_DEVICE_ID] as string | undefined;
   const deviceId = (headerDeviceId && headerDeviceId.trim()) || deriveDeviceId(request);
   const name = (request.headers[HEADER_DEVICE_NAME] as string | undefined)?.trim() || null;
@@ -61,6 +54,19 @@ export async function requireApprovedRequestDevice(
       },
     });
   }
+
+  return { device, deviceId };
+}
+
+export async function requireApprovedRequestDevice(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<void> {
+  const user = request.user as any;
+  const userId = user?.userId ?? user?.sub;
+  if (!userId) return;
+
+  const { device, deviceId } = await upsertRequestDeviceForUser(userId, request);
 
   if (device.status === 'blocked') {
     error(reply, ErrorCodes.DEVICE_BLOCKED, 'Device is blocked', 403, { deviceId, status: device.status });
