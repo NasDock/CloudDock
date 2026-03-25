@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/Input';
 
 export const DeviceList = () => {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'access' | 'clients'>('access');
   const [renameModal, setRenameModal] = useState<{ isOpen: boolean; clientId?: string; name?: string }>({
     isOpen: false,
   });
@@ -66,129 +67,152 @@ export const DeviceList = () => {
       <div className="flex">
         <Sidebar />
         <main className="flex-1">
-          <PageContainer title="设备管理" subtitle="当前账号下的 NAS 客户端设备">
-            {isLoading ? (
-              <div className="text-center py-12 text-gray-500">加载中...</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data?.clients?.map((client) => (
-                  <Card key={client.clientId} padding="none" hover>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{client.name}</h3>
-                          <p className="text-sm text-gray-500 mt-0.5">{client.clientId}</p>
+          <PageContainer title="防火墙" subtitle="访问控制与客户端管理">
+            <div className="flex items-center gap-2 mb-6">
+              <button
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  activeTab === 'access'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+                onClick={() => setActiveTab('access')}
+              >
+                访问控制
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  activeTab === 'clients'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+                onClick={() => setActiveTab('clients')}
+              >
+                客户端
+              </button>
+            </div>
+
+            {activeTab === 'clients' ? (
+              isLoading ? (
+                <div className="text-center py-12 text-gray-500">加载中...</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {data?.clients?.map((client) => (
+                    <Card key={client.clientId} padding="none" hover>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{client.name}</h3>
+                            <p className="text-sm text-gray-500 mt-0.5">{client.clientId}</p>
+                          </div>
+                          <StatusBadge
+                            status={client.enabled === false ? 'offline' : client.status}
+                            label={client.enabled === false ? '已下线' : client.status === 'online' ? '在线' : '离线'}
+                          />
                         </div>
-                        <StatusBadge
-                          status={client.enabled === false ? 'offline' : client.status}
-                          label={client.enabled === false ? '已下线' : client.status === 'online' ? '在线' : '离线'}
-                        />
+
+                        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">是否启用</span>
+                            <span className="font-medium">{client.enabled === false ? '否' : '是'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">最后在线</span>
+                            <span className="text-gray-700">{client.lastSeen || '-'}</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">是否启用</span>
-                          <span className="font-medium">{client.enabled === false ? '否' : '是'}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">最后在线</span>
-                          <span className="text-gray-700">{client.lastSeen || '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
-                      <Button
-                        variant="secondary"
-                        className="mr-2"
-                        onClick={() => {
-                          setRenameValue(client.name);
-                          setRenameModal({ isOpen: true, clientId: client.clientId, name: client.name });
-                        }}
-                      >
-                        修改名称
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        isLoading={toggleMutation.isPending}
-                        onClick={() =>
-                          toggleMutation.mutate({ clientId: client.clientId, enabled: client.enabled === false })
-                        }
-                      >
-                        {client.enabled === false ? '上线' : '下线'}
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </PageContainer>
-
-          <PageContainer title="访问设备" subtitle="最近访问过的设备列表，可审批、禁用或删除">
-            {requestDeviceLoading ? (
-              <div className="text-center py-12 text-gray-500">加载中...</div>
-            ) : requestDeviceData?.devices?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {requestDeviceData.devices.map((device) => (
-                  <Card key={device.deviceId} padding="none" hover>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{device.name || '未知设备'}</h3>
-                          <p className="text-sm text-gray-500 mt-0.5">{device.deviceId}</p>
-                        </div>
-                        <StatusBadge
-                          status={device.status === 'approved' ? 'online' : device.status === 'blocked' ? 'offline' : 'pending'}
-                          label={device.status === 'approved' ? '已允许' : device.status === 'blocked' ? '已禁止' : '待审批'}
-                        />
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">平台</span>
-                          <span className="text-gray-700">{device.platform || '-'}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">最近访问</span>
-                          <span className="text-gray-700">{device.lastSeen || '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
-                      {device.status !== 'approved' && (
+                      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
                         <Button
                           variant="secondary"
                           className="mr-2"
-                          isLoading={updateRequestDeviceMutation.isPending}
-                          onClick={() => updateRequestDeviceMutation.mutate({ deviceId: device.deviceId, status: 'approved' })}
+                          onClick={() => {
+                            setRenameValue(client.name);
+                            setRenameModal({ isOpen: true, clientId: client.clientId, name: client.name });
+                          }}
                         >
-                          允许
+                          修改名称
                         </Button>
-                      )}
-                      {device.status !== 'blocked' && (
                         <Button
                           variant="secondary"
-                          className="mr-2"
-                          isLoading={updateRequestDeviceMutation.isPending}
-                          onClick={() => updateRequestDeviceMutation.mutate({ deviceId: device.deviceId, status: 'blocked' })}
+                          isLoading={toggleMutation.isPending}
+                          onClick={() =>
+                            toggleMutation.mutate({ clientId: client.clientId, enabled: client.enabled === false })
+                          }
                         >
-                          禁止
+                          {client.enabled === false ? '上线' : '下线'}
                         </Button>
-                      )}
-                      <Button
-                        variant="secondary"
-                        isLoading={deleteRequestDeviceMutation.isPending}
-                        onClick={() => deleteRequestDeviceMutation.mutate(device.deviceId)}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )
             ) : (
-              <div className="text-center py-12 text-gray-500">暂无访问设备</div>
+              requestDeviceLoading ? (
+                <div className="text-center py-12 text-gray-500">加载中...</div>
+              ) : requestDeviceData?.devices?.length ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {requestDeviceData.devices.map((device) => (
+                    <Card key={device.deviceId} padding="none" hover>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{device.name || '未知设备'}</h3>
+                            <p className="text-sm text-gray-500 mt-0.5">{device.deviceId}</p>
+                          </div>
+                          <StatusBadge
+                            status={device.status === 'approved' ? 'online' : device.status === 'blocked' ? 'offline' : 'pending'}
+                            label={device.status === 'approved' ? '已允许' : device.status === 'blocked' ? '已禁止' : '待审批'}
+                          />
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">平台</span>
+                            <span className="text-gray-700">{device.platform || '-'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">最近访问</span>
+                            <span className="text-gray-700">{device.lastSeen || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
+                        {device.status !== 'approved' && (
+                          <Button
+                            variant="secondary"
+                            className="mr-2"
+                            isLoading={updateRequestDeviceMutation.isPending}
+                            onClick={() => updateRequestDeviceMutation.mutate({ deviceId: device.deviceId, status: 'approved' })}
+                          >
+                            允许
+                          </Button>
+                        )}
+                        {device.status !== 'blocked' && (
+                          <Button
+                            variant="secondary"
+                            className="mr-2"
+                            isLoading={updateRequestDeviceMutation.isPending}
+                            onClick={() => updateRequestDeviceMutation.mutate({ deviceId: device.deviceId, status: 'blocked' })}
+                          >
+                            禁止
+                          </Button>
+                        )}
+                        <Button
+                          variant="secondary"
+                          isLoading={deleteRequestDeviceMutation.isPending}
+                          onClick={() => deleteRequestDeviceMutation.mutate(device.deviceId)}
+                        >
+                          删除
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">暂无访问设备</div>
+              )
             )}
           </PageContainer>
         </main>

@@ -18,6 +18,13 @@ export const deviceApi = {
     const response = await api.get<{ success: true; data: ClientListResponse }>('/clients');
     return response.data.data!;
   },
+  setEnabled: async (clientId: string, enabled: boolean): Promise<{ clientId: string; enabled: boolean; status: string }> => {
+    const response = await api.patch<{ success: true; data: { clientId: string; enabled: boolean; status: string } }>(
+      `/clients/${clientId}/enabled`,
+      { enabled }
+    );
+    return response.data.data!;
+  },
 
   bind: async (data: { bindToken: string; deviceName: string }): Promise<{ name: string }> => {
     await api.post<{ success: true; data: { clientKey: string } }>(

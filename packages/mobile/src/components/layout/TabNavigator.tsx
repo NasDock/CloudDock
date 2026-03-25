@@ -14,7 +14,7 @@ interface TabItem {
 const tabs: TabItem[] = [
   { key: 'dashboard', title: '首页', icon: 'home', route: '/' },
   { key: 'tunnels', title: '隧道', icon: 'tunnel', route: '/tunnels' },
-  { key: 'devices', title: '设备', icon: 'devices', route: '/devices' },
+  { key: 'devices', title: '防火墙', icon: 'devices', route: '/devices' },
   { key: 'profile', title: '我的', icon: 'account', route: '/profile' },
 ];
 

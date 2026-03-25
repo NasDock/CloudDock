@@ -44,7 +44,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="devices"
         options={{
-          title: '设备',
+          title: '防火墙',
           tabBarIcon: ({ color }) => (
             <IconButton icon="devices" iconColor={color} size={22} />
           ),

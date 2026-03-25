@@ -94,7 +94,7 @@ function TabNavigator() {
         name="devices"
         component={DeviceListScreen}
         options={{
-          tabBarLabel: '设备',
+          tabBarLabel: '防火墙',
           tabBarIcon: ({ color, size }) => (
             <IconButton icon="devices" iconColor={color} size={size} />
           ),

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, FlatList, RefreshControl, Alert } from 'react-native';
-import { Text, FAB, Snackbar, Dialog, Portal, Button, TextInput, IconButton } from 'react-native-paper';
+import { Text, FAB, Snackbar, Dialog, Portal, Button, TextInput, IconButton, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/layout/Header';
@@ -17,6 +17,7 @@ export default function DeviceListScreen() {
 
   const [devices, setDevices] = useState<Client[]>([]);
   const [requestDevices, setRequestDevices] = useState<RequestDevice[]>([]);
+  const [activeTab, setActiveTab] = useState<'access' | 'clients'>('access');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +110,27 @@ export default function DeviceListScreen() {
           <Text style={styles.value}>{formatRelativeTime(item.lastSeen)}</Text>
         </View>
       )}
+      <View style={styles.actionRow}>
+        <Button
+          mode="outlined"
+          onPress={async () => {
+            try {
+              const updated = await deviceApi.setEnabled(item.clientId, item.enabled === false);
+              setDevices((prev) =>
+                prev.map((d) =>
+                  d.clientId === updated.clientId
+                    ? { ...d, enabled: updated.enabled, status: updated.status as Client['status'] }
+                    : d
+                )
+              );
+            } catch {
+              setError('操作失败');
+            }
+          }}
+        >
+          {item.enabled === false ? '上线' : '下线'}
+        </Button>
+      </View>
     </Card>
   );
 
@@ -196,35 +218,43 @@ export default function DeviceListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Header title="设备管理" />
+      <Header title="防火墙" />
 
-      <FlatList
-        data={devices}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.clientId}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={renderEmpty}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        ListHeaderComponent={
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>NAS 设备</Text>
-          </View>
-        }
-        ListFooterComponent={
-          <View style={styles.section}>
-            <View style={styles.sectionDivider} />
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>访问设备</Text>
-              <Text style={styles.sectionSubtitle}>新设备需要审批后才可访问</Text>
+      <View style={styles.tabWrap}>
+        <SegmentedButtons
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'access' | 'clients')}
+          buttons={[
+            { value: 'access', label: '访问控制' },
+            { value: 'clients', label: '客户端' },
+          ]}
+        />
+      </View>
+
+      {activeTab === 'clients' ? (
+        <FlatList
+          data={devices}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.clientId}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        />
+      ) : (
+        <FlatList
+          data={requestDevices}
+          renderItem={({ item }) => renderRequestDeviceCard(item)}
+          keyExtractor={(item) => item.deviceId}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>暂无访问设备</Text>
+              <Text style={styles.emptySubtitle}>新设备需要审批后才可访问</Text>
             </View>
-            {requestDevices.length === 0 ? (
-              <Card title="暂无访问设备" subtitle="等待新的客户端访问" />
-            ) : (
-              requestDevices.map((device) => renderRequestDeviceCard(device))
-            )}
-          </View>
-        }
-      />
+          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        />
+      )}
 
       <FAB
         icon="qrcode-scan"
@@ -274,34 +304,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 140,
   },
-  section: {
+  tabWrap: {
+    paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginLeft: 16,
-    marginTop: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginRight: 16,
-    marginTop: 8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 4,
   },
   requestCard: {
     marginVertical: 6,
