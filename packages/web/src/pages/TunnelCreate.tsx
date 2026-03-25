@@ -35,14 +35,10 @@ export const TunnelCreate = () => {
           <PageContainer
             title="创建隧道"
             subtitle="配置一个新的内网穿透隧道"
-            breadcrumbs={[
-              { label: '首页', to: '/dashboard' },
-              { label: '隧道管理', to: '/tunnels' },
-              { label: '创建隧道' },
-            ]}
           >
             <div className="max-w-2xl">
               <Card>
+                <h3 className="text-lg font-semibold mb-4">隧道配置</h3>
                 <TunnelForm
                   onSubmit={onSubmit}
                   onCancel={() => navigate('/tunnels')}

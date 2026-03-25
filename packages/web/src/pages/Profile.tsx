@@ -71,26 +71,28 @@ export const Profile = () => {
             <div className="max-w-2xl space-y-6">
               {/* Profile Info */}
               <Card>
-                <h3 className="font-medium text-gray-900 mb-4">基本信息</h3>
-                <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">基本信息</h3>
+                </div>
+                <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">用户 ID</p>
+                      <p className="text-gray-500">用户 ID</p>
                       <p className="font-mono text-sm mt-0.5">{user?.userId}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">套餐</p>
+                      <p className="text-gray-500">套餐</p>
                       <p className="font-medium mt-0.5">
                         {user?.plan === 'free' ? '免费版' : user?.plan === 'pro' ? '专业版' : '企业版'}
                       </p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">邮箱</p>
+                    <p className="text-gray-500">邮箱</p>
                     <p className="font-medium mt-0.5">{user?.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">注册时间</p>
+                    <p className="text-gray-500">注册时间</p>
                     <p className="font-medium mt-0.5">{user?.createdAt ? formatDate(user.createdAt) : '-'}</p>
                   </div>
                 </div>
@@ -98,7 +100,7 @@ export const Profile = () => {
 
               {/* Update Profile */}
               <Card>
-                <h3 className="font-medium text-gray-900 mb-4">修改用户名</h3>
+                <h3 className="text-lg font-semibold mb-4">修改用户名</h3>
                 <form onSubmit={profileForm.handleSubmit(onUpdateProfile)} className="space-y-4">
                   <Input
                     label="用户名"
@@ -125,7 +127,7 @@ export const Profile = () => {
 
               {/* Change Password */}
               <Card>
-                <h3 className="font-medium text-gray-900 mb-4">修改密码</h3>
+                <h3 className="text-lg font-semibold mb-4">修改密码</h3>
                 <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4">
                   <Input
                     label="当前密码"

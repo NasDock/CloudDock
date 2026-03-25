@@ -68,22 +68,22 @@ export const DeviceList = () => {
         <Sidebar />
         <main className="flex-1">
           <PageContainer title="防火墙" subtitle="访问控制与客户端管理">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 mb-6">
               <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'access'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
                 onClick={() => setActiveTab('access')}
               >
                 访问控制
               </button>
               <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'clients'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
                 onClick={() => setActiveTab('clients')}
               >
@@ -95,7 +95,7 @@ export const DeviceList = () => {
               isLoading ? (
                 <div className="text-center py-12 text-gray-500">加载中...</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {data?.clients?.map((client) => (
                     <Card key={client.clientId} padding="none" hover>
                       <div className="p-4">
@@ -151,7 +151,7 @@ export const DeviceList = () => {
               requestDeviceLoading ? (
                 <div className="text-center py-12 text-gray-500">加载中...</div>
               ) : requestDeviceData?.devices?.length ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {requestDeviceData.devices.map((device) => (
                     <Card key={device.deviceId} padding="none" hover>
                       <div className="p-4">

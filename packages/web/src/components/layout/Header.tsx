@@ -16,7 +16,10 @@ export const Header = () => {
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/60 backdrop-blur">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex-1" />
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <img src="/favicon.png" alt="CloudDock" className="w-8 h-8 rounded-lg" />
+            <span className="font-semibold text-gray-900">CloudDock</span>
+          </Link>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
               <StatusBadge status={wsConnected ? 'online' : 'offline'} label={wsConnected ? '已连接' : '未连接'} size="sm" />

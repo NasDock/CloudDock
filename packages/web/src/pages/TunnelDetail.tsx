@@ -79,11 +79,6 @@ export const TunnelDetail = () => {
           <PageContainer
             title={tunnel.name}
             subtitle={`${protocolLabels[tunnel.protocol]} 隧道`}
-            breadcrumbs={[
-              { label: '首页', to: '/dashboard' },
-              { label: '隧道管理', to: '/tunnels' },
-              { label: tunnel.name },
-            ]}
             actions={
               <div className="flex items-center gap-3">
                 <StatusBadge
@@ -109,39 +104,37 @@ export const TunnelDetail = () => {
               </div>
             }
           >
-            <div className="grid grid-cols-1 gap-6">
-              {/* Main Content */}
+            <div className="grid gap-6">
               <div className="space-y-6">
-                {/* Basic Info */}
                 <Card>
-                  <h3 className="font-medium text-gray-900 mb-4">基本信息</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600">协议类型</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">基本信息</h3>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">协议类型</span>
                       <span className="font-medium">{protocolLabels[tunnel.protocol]}</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600">本地地址</span>
-                      <span className="font-mono text-sm">{tunnel.localAddress}</span>
+                    <div className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">本地地址</span>
+                      <span className="font-mono">{tunnel.localAddress}</span>
                     </div>
                     {tunnel.localHostname && (
-                      <div className="flex justify-between py-2 border-b border-gray-100">
-                        <span className="text-gray-600">本地 Host</span>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-gray-500">本地 Host</span>
                         <span className="font-medium">{tunnel.localHostname}</span>
                       </div>
                     )}
-                    <div className="flex justify-between py-2 border-b border-gray-100">
+                    <div className="flex items-start justify-between border-b pb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-600">访问路径</span>
+                        <span className="text-gray-500">访问路径</span>
                         <button
                           type="button"
                           className="text-gray-400 hover:text-gray-700 transition-colors"
                           onClick={async () => {
                             try {
                               await navigator.clipboard.writeText(fullUrl);
-                            } catch {
-                              // ignore
-                            }
+                            } catch {}
                           }}
                           aria-label="复制访问路径"
                           title="复制"
@@ -152,11 +145,11 @@ export const TunnelDetail = () => {
                           </svg>
                         </button>
                       </div>
-                      <span className="font-mono text-sm text-primary-600">{fullUrl}</span>
+                      <span className="font-mono text-primary-600 text-xs">{fullUrl}</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-gray-600">创建时间</span>
-                      <span className="text-sm">{formatDate(tunnel.createdAt)}</span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">创建时间</span>
+                      <span>{formatDate(tunnel.createdAt)}</span>
                     </div>
                   </div>
                 </Card>
@@ -164,7 +157,7 @@ export const TunnelDetail = () => {
                 {/* Statistics */}
                 {tunnel.statistics && (
                   <Card>
-                    <h3 className="font-medium text-gray-900 mb-4">流量统计</h3>
+                    <h3 className="text-lg font-semibold mb-4">流量统计</h3>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-primary-600">
