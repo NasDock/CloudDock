@@ -21,6 +21,7 @@ model User {
   tunnels       Tunnel[]
   clients       Client[]
   refreshTokens RefreshToken[]
+  requestDevices RequestDevice[]
 
   @@map("users")
 }
