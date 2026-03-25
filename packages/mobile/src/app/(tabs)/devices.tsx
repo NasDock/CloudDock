@@ -5,16 +5,18 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/layout/Header';
 import { Card } from '../../components/ui/Card';
-import { StatusBadge } from '../../components/ui/StatusBadge';
 import { LoadingOverlay } from '../../components/ui/LoadingOverlay';
 import { deviceApi } from '../../api/device';
+import { requestDeviceApi } from '../../api/request-device';
 import { formatRelativeTime } from '../../utils/formatters';
 import type { Client } from '../../api/device';
+import type { RequestDevice } from '../../api/request-device';
 
 export default function DeviceListScreen() {
   const router = useRouter();
 
   const [devices, setDevices] = useState<Client[]>([]);
+  const [requestDevices, setRequestDevices] = useState<RequestDevice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,8 @@ export default function DeviceListScreen() {
     try {
       const response = await deviceApi.list();
       setDevices(response.clients);
+      const requestDeviceResponse = await requestDeviceApi.list();
+      setRequestDevices(requestDeviceResponse.devices);
     } catch {
       setError('获取设备列表失败');
     } finally {
@@ -108,9 +112,84 @@ export default function DeviceListScreen() {
     </Card>
   );
 
+  const renderRequestDeviceCard = (item: RequestDevice) => {
+    const statusLabel = item.status === 'approved' ? '已允许' : item.status === 'blocked' ? '已禁止' : '待审批';
+    const status = item.status === 'approved' ? 'online' : 'offline';
+    return (
+      <Card
+        key={item.deviceId}
+        title={item.name || '未知设备'}
+        subtitle={statusLabel}
+        status={status}
+        statusLabel={statusLabel}
+        style={styles.requestCard}
+      >
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>设备ID</Text>
+          <Text style={styles.value}>{item.deviceId}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>平台</Text>
+          <Text style={styles.value}>{item.platform || '-'}</Text>
+        </View>
+        {item.lastSeen && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>最近访问</Text>
+            <Text style={styles.value}>{formatRelativeTime(item.lastSeen)}</Text>
+          </View>
+        )}
+        <View style={styles.actionRow}>
+          {item.status !== 'approved' && (
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  const updated = await requestDeviceApi.updateStatus(item.deviceId, 'approved');
+                  setRequestDevices((prev) => prev.map((d) => (d.deviceId === updated.deviceId ? updated : d)));
+                } catch {
+                  setError('允许失败');
+                }
+              }}
+            >
+              允许
+            </Button>
+          )}
+          {item.status !== 'blocked' && (
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  const updated = await requestDeviceApi.updateStatus(item.deviceId, 'blocked');
+                  setRequestDevices((prev) => prev.map((d) => (d.deviceId === updated.deviceId ? updated : d)));
+                } catch {
+                  setError('禁止失败');
+                }
+              }}
+            >
+              禁止
+            </Button>
+          )}
+          <Button
+            mode="outlined"
+            onPress={async () => {
+              try {
+                await requestDeviceApi.remove(item.deviceId);
+                setRequestDevices((prev) => prev.filter((d) => d.deviceId !== item.deviceId));
+              } catch {
+                setError('删除失败');
+              }
+            }}
+          >
+            删除
+          </Button>
+        </View>
+      </Card>
+    );
+  };
+
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>暂无设备</Text>
+      <Text style={styles.emptyTitle}>暂无 NAS 设备</Text>
       <Text style={styles.emptySubtitle}>使用移动端扫码绑定 NAS 设备</Text>
     </View>
   );
@@ -126,6 +205,25 @@ export default function DeviceListScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        ListHeaderComponent={
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>NAS 设备</Text>
+          </View>
+        }
+        ListFooterComponent={
+          <View style={styles.section}>
+            <View style={styles.sectionDivider} />
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>访问设备</Text>
+              <Text style={styles.sectionSubtitle}>新设备需要审批后才可访问</Text>
+            </View>
+            {requestDevices.length === 0 ? (
+              <Card title="暂无访问设备" subtitle="等待新的客户端访问" />
+            ) : (
+              requestDevices.map((device) => renderRequestDeviceCard(device))
+            )}
+          </View>
+        }
       />
 
       <FAB
@@ -174,7 +272,45 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: 100,
+    paddingBottom: 140,
+  },
+  section: {
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginLeft: 16,
+    marginTop: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginRight: 16,
+    marginTop: 8,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  requestCard: {
+    marginVertical: 6,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
   },
   infoRow: {
     flexDirection: 'row',

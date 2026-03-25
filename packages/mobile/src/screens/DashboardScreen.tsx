@@ -4,6 +4,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { FAB, Snackbar, Text } from 'react-native-paper'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { deviceApi } from '../api/device'
+import { requestDeviceApi } from '../api/request-device'
 import { tunnelApi } from '../api/tunnel'
 import { Header } from '../components/layout/Header'
 import { TunnelCard } from '../components/tunnel/TunnelCard'
@@ -13,6 +14,7 @@ import { StatusBadge } from '../components/ui/StatusBadge'
 import { useAuth } from '../hooks/useAuth'
 import { usePushNotification } from '../hooks/usePushNotification'
 import { useTunnel } from '../hooks/useTunnel'
+import type { RequestDevice } from '../api/request-device'
 
 export default function DashboardScreen() {
   const router = useRouter()
@@ -24,10 +26,15 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
   const [clientNames, setClientNames] = useState<Record<string, string>>({})
+  const [pendingDevices, setPendingDevices] = useState<RequestDevice[]>([])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     await refresh()
+    try {
+      const res = await requestDeviceApi.list()
+      setPendingDevices(res.devices.filter((d) => d.status === 'pending'))
+    } catch {}
     setRefreshing(false)
   }
 
@@ -54,6 +61,13 @@ export default function DashboardScreen() {
           map[c.clientId] = c.name || '默认设备'
         })
         setClientNames(map)
+      })
+      .catch(() => {})
+
+    requestDeviceApi
+      .list()
+      .then((res) => {
+        setPendingDevices(res.devices.filter((d) => d.status === 'pending'))
       })
       .catch(() => {})
   }, [])
@@ -94,6 +108,29 @@ export default function DashboardScreen() {
             </View>
           </View>
         </Card>
+
+        {/* Pending Devices */}
+        {pendingDevices.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>需要审批的设备</Text>
+              <Text style={styles.seeAll} onPress={() => router.push('/devices')}>
+                去处理
+              </Text>
+            </View>
+            <Card>
+              {pendingDevices.slice(0, 3).map((device) => (
+                <View key={device.deviceId} style={styles.pendingRow}>
+                  <Text style={styles.pendingName}>{device.name || '未知设备'}</Text>
+                  <Text style={styles.pendingMeta}>{device.platform || 'unknown'}</Text>
+                </View>
+              ))}
+              {pendingDevices.length > 3 && (
+                <Text style={styles.pendingMore}>还有 {pendingDevices.length - 3} 台设备待审批</Text>
+              )}
+            </Card>
+          </View>
+        )}
 
         {/* Recent Tunnels */}
         <View style={styles.section}>
@@ -218,6 +255,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  pendingName: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '600',
+  },
+  pendingMeta: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  pendingMore: {
+    fontSize: 12,
+    color: '#6B7280',
+    paddingTop: 6,
   },
   seeAll: {
     fontSize: 14,

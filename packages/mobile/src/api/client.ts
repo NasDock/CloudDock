@@ -1,8 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const DEFAULT_API_BASE_URL = 'https://cloud.audiodock.cn';
 const API_BASE_URL_KEY = 'apiBaseUrl';
+const REQUEST_DEVICE_ID_KEY = 'requestDeviceId';
 let apiBaseUrl = DEFAULT_API_BASE_URL;
 
 function normalizeApiBaseUrl(input: string): string {
@@ -58,12 +60,41 @@ export function getApiBaseUrl(): string {
   return apiBaseUrl;
 }
 
+function generateRequestDeviceId(): string {
+  return `rd_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+async function getRequestDeviceId(): Promise<string> {
+  const existing = await AsyncStorage.getItem(REQUEST_DEVICE_ID_KEY);
+  if (existing) return existing;
+  const next = generateRequestDeviceId();
+  await AsyncStorage.setItem(REQUEST_DEVICE_ID_KEY, next);
+  return next;
+}
+
+async function getRequestDeviceHeaders(): Promise<Record<string, string>> {
+  const deviceId = await getRequestDeviceId();
+  const platform = Platform.OS || 'mobile';
+  const name = `Mobile - ${platform}`;
+  return {
+    'x-request-device-id': deviceId,
+    'x-request-device-name': name,
+    'x-request-device-platform': platform,
+  };
+}
+
 // Request interceptor - add auth token
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await AsyncStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.headers) {
+      const deviceHeaders = await getRequestDeviceHeaders();
+      config.headers['x-request-device-id'] = deviceHeaders['x-request-device-id'];
+      config.headers['x-request-device-name'] = deviceHeaders['x-request-device-name'];
+      config.headers['x-request-device-platform'] = deviceHeaders['x-request-device-platform'];
     }
     return config;
   },

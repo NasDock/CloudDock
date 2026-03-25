@@ -18,12 +18,8 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <span className="font-semibold text-gray-900">内网穿透</span>
+            <img src="/favicon.png" alt="CloudDock" className="w-8 h-8 rounded-lg" />
+            <span className="font-semibold text-gray-900">CloudDock</span>
           </Link>
 
           {/* Right side */}

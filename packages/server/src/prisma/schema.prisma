@@ -106,3 +106,25 @@ model RefreshToken {
   @@index([userId])
   @@map("refresh_tokens")
 }
+
+// RequestDevice = request initiator device (web/mobile/mini-program)
+model RequestDevice {
+  requestDeviceId String   @id @default(cuid()) @map("request_device_id")
+  userId          String   @map("user_id")
+  deviceId        String   @map("device_id")
+  name            String?
+  platform        String?
+  status          String   @default("pending")
+  lastSeen        DateTime? @map("last_seen")
+  lastIp          String?  @map("last_ip")
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([status])
+  @@map("request_devices")
+}

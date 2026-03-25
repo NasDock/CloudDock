@@ -255,17 +255,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     color: '#6B7280',
+    width: 72,
   },
   value: {
     fontSize: 14,
     color: '#1F2937',
     fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     justifyContent: 'flex-end',
+    marginLeft: 12,
   },
   statsRow: {
     flexDirection: 'row',

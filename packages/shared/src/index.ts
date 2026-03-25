@@ -5,6 +5,7 @@ export * from './types/device.js';
 export * from './types/ws-message.js';
 export * from './types/webrtc-signal.js';
 export * from './types/webrtc-data.js';
+export * from './types/request-device.js';
 export * from './types/api.js';
 export * from './constants/index.js';
 export * from './utils/id.js';

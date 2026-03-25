@@ -1,5 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { ClientService } from './client.service.js';
+import { authenticate } from '../../middleware/auth.middleware.js';
+import { requireApprovedRequestDevice } from '../../middleware/request-device.middleware.js';
 
 // Pairing storage: code -> { userId, userName, createdAt }
 // Shared between HTTP routes and WS server via a singleton
@@ -20,9 +22,11 @@ export function registerPendingPairing(code: string, userId: string, userName: s
 const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const service = new ClientService();
 
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireApprovedRequestDevice);
+
   // List user's clients
   fastify.get('/', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
 
     const result = await service.listClients(userId);
@@ -31,7 +35,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // Rename a client
   fastify.patch('/:clientId', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { clientId } = request.params as { clientId: string };
     const { name } = request.body as { name: string };
@@ -52,7 +55,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // Enable/disable a client (manual online/offline)
   fastify.patch('/:clientId/enabled', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { clientId } = request.params as { clientId: string };
     const { enabled } = request.body as { enabled: boolean };
@@ -80,7 +82,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // Delete a client
   fastify.delete('/:clientId', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { clientId } = request.params as { clientId: string };
 
@@ -101,7 +102,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // List pending approvals (for web UI polling)
   // This returns pairings that need to be approved by the current user
   fastify.get('/pending', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
 
     // Import wsServer dynamically to avoid circular
@@ -124,7 +124,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // Ensure default client exists (used by web+nas-client bundled deployment)
   fastify.post('/default', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
 
     const result = await service.getOrCreateDefaultClient(userId);
@@ -133,7 +132,6 @@ const clientRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   // Approve a pairing
   fastify.post('/:pairingCode/approve', async (request, reply) => {
-    await request.jwtVerify();
     const userId = (request.user as any).userId || (request.user as any).sub;
     const { pairingCode } = request.params as { pairingCode: string };
     const { clientName } = request.body as { clientName?: string };

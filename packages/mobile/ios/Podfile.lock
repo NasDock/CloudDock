@@ -56,6 +56,7 @@ PODS:
   - hermes-engine (0.76.0):
     - hermes-engine/Pre-built (= 0.76.0)
   - hermes-engine/Pre-built (0.76.0)
+  - JitsiWebRTC (118.0.0)
   - RCT-Folly (2024.01.01.00):
     - boost
     - DoubleConversion
@@ -1293,6 +1294,9 @@ PODS:
     - Yoga
   - react-native-safe-area-context (4.14.1):
     - React-Core
+  - react-native-webrtc (118.0.7):
+    - JitsiWebRTC (~> 118.0.0)
+    - React-Core
   - React-nativeconfig (0.76.0)
   - React-NativeModulesApple (0.76.0):
     - glog
@@ -1665,6 +1669,7 @@ DEPENDENCIES:
   - "React-Mapbuffer (from `../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon`)"
   - "React-microtasksnativemodule (from `../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - react-native-webrtc (from `../node_modules/react-native-webrtc`)
   - "React-nativeconfig (from `../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon`)"
   - "React-NativeModulesApple (from `../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)"
   - "React-perflogger (from `../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon/reactperflogger`)"
@@ -1699,6 +1704,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - JitsiWebRTC
     - SocketRocket
     - ZXingObjC
 
@@ -1802,6 +1808,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-webrtc:
+    :path: "../node_modules/react-native-webrtc"
   React-nativeconfig:
     :path: "../../../node_modules/.pnpm/react-native@0.76.0_@babel+core@7.29.0_@babel+preset-env@7.29.2_@babel+core@7.29.0__@types+react@18.3.28_react@18.3.1/node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -1885,6 +1893,7 @@ SPEC CHECKSUMS:
   fmt: 10c6e61f4be25dc963c36bd73fc7b1705fe975be
   glog: 08b301085f15bcbb6ff8632a8ebaf239aae04e6a
   hermes-engine: 9de51d2f67336348a6cd5b686330e436d1dbd522
+  JitsiWebRTC: 3a41671ef65a51d7204323814b055a2690b921c7
   RCT-Folly: 84578c8756030547307e4572ab1947de1685c599
   RCTDeprecation: 4c2c4a088b6f0ccfcbd53c9d5614b0238ad57909
   RCTRequired: 2d8a683a7848bc0baf5883f0792c1ac43f6267b5
@@ -1915,6 +1924,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: b288fcce9c939b37940cff7a8fbdce0bc23b5cfa
   React-microtasksnativemodule: 0c9e9656e7bad934d4077aad2890eacda905d7db
   react-native-safe-area-context: 758e894ca5a9bd1868d2a9cfbca7326a2b6bf9dc
+  react-native-webrtc: eb8582f60b91e8883c290425bf1676c4bcedd63d
   React-nativeconfig: 72c10ff34863148ef90df9c9c8eacba99d2faaaa
   React-NativeModulesApple: 71fd2cce69bcd2c46673cf6afedb4935b47bf230
   React-perflogger: a31d0c57b4121ca087bf311ea4bd51e81760bcfb

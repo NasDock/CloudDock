@@ -32,12 +32,8 @@ export const Login = () => {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">内网穿透工具</h1>
+          <img src="/favicon.png" alt="CloudDock" className="w-12 h-12 rounded-xl mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900">CloudDock</h1>
           <p className="text-gray-600 mt-1">安全访问家庭内部服务</p>
         </div>
 

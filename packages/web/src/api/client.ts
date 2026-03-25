@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { getApiUrl } from '@/utils/runtimeConfig';
+import { getRequestDeviceHeaders } from '@/utils/requestDevice';
 
 const BASE_URL = getApiUrl(import.meta.env.VITE_API_URL || 'https://cloud.audiodock.cn/api');
 
@@ -52,6 +53,10 @@ http.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const deviceHeaders = getRequestDeviceHeaders();
+  config.headers['x-request-device-id'] = deviceHeaders['x-request-device-id'];
+  config.headers['x-request-device-name'] = deviceHeaders['x-request-device-name'];
+  config.headers['x-request-device-platform'] = deviceHeaders['x-request-device-platform'];
   return config;
 });
 
