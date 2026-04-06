@@ -43,12 +43,6 @@ const navItems = [
 export const Sidebar = () => {
   return (
     <aside className="w-60 min-h-screen bg-gray-50/60 border-r border-gray-200">
-      <div className="h-16 flex items-center px-4 border-b border-gray-200">
-        <div className="flex items-center gap-2 font-semibold text-gray-900">
-          <img src="/favicon.png" alt="CloudDock" className="w-6 h-6 rounded" />
-          <span className="text-lg">CloudDock</span>
-        </div>
-      </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => (
           <NavLink
