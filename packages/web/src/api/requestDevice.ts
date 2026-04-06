@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { RequestDevice } from '@cloud-dock/shared';
+import type { RequestDevice, RequestDeviceFirewallSettings, RequestDeviceListResponse } from '@cloud-dock/shared';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -9,7 +9,12 @@ interface ApiResponse<T> {
 
 export const requestDeviceApi = {
   list: async () => {
-    const res = await apiClient.get<ApiResponse<{ devices: RequestDevice[] }>>('/request-devices');
+    const res = await apiClient.get<ApiResponse<RequestDeviceListResponse>>('/request-devices');
+    if (!res.data.success) throw new Error(res.data.error?.message || 'Request failed');
+    return res.data.data!;
+  },
+  updateSettings: async (settings: RequestDeviceFirewallSettings) => {
+    const res = await apiClient.patch<ApiResponse<RequestDeviceFirewallSettings>>('/request-devices/settings', settings);
     if (!res.data.success) throw new Error(res.data.error?.message || 'Request failed');
     return res.data.data!;
   },

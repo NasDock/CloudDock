@@ -13,3 +13,12 @@ export interface RequestDevice {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface RequestDeviceFirewallSettings {
+  autoApproveNewRequestDevices: boolean;
+}
+
+export interface RequestDeviceListResponse {
+  devices: RequestDevice[];
+  settings: RequestDeviceFirewallSettings;
+}

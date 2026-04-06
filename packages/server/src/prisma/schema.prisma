@@ -10,13 +10,14 @@ datasource db {
 }
 
 model User {
-  userId       String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  passwordHash String   @map("password_hash")
-  plan         String   @default("free")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  userId                        String   @id @default(cuid())
+  email                         String   @unique
+  username                      String   @unique
+  passwordHash                  String   @map("password_hash")
+  plan                          String   @default("free")
+  autoApproveNewRequestDevices  Boolean  @default(true) @map("auto_approve_new_request_devices")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
 
   tunnels       Tunnel[]
   clients       Client[]

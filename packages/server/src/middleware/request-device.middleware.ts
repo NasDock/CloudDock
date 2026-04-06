@@ -28,8 +28,11 @@ export async function upsertRequestDeviceForUser(userId: string, request: Fastif
   });
 
   if (!device) {
-    const existingCount = await prisma.requestDevice.count({ where: { userId } });
-    const status = existingCount === 0 ? 'approved' : 'pending';
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: { autoApproveNewRequestDevices: true },
+    });
+    const status = user?.autoApproveNewRequestDevices === false ? 'pending' : 'approved';
     device = await prisma.requestDevice.create({
       data: {
         userId,
