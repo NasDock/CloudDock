@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, FlatList, RefreshControl, Alert } from 'react-native';
-import { Text, FAB, Snackbar, Dialog, Portal, Button, TextInput, IconButton, SegmentedButtons } from 'react-native-paper';
+import { Text, FAB, Snackbar, Dialog, Portal, Button, TextInput, IconButton, SegmentedButtons, Switch } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/layout/Header';
@@ -10,13 +10,16 @@ import { deviceApi } from '../../api/device';
 import { requestDeviceApi } from '../../api/request-device';
 import { formatRelativeTime } from '../../utils/formatters';
 import type { Client } from '../../api/device';
-import type { RequestDevice } from '../../api/request-device';
+import type { RequestDevice, RequestDeviceFirewallSettings } from '../../api/request-device';
 
 export default function DeviceListScreen() {
   const router = useRouter();
 
   const [devices, setDevices] = useState<Client[]>([]);
   const [requestDevices, setRequestDevices] = useState<RequestDevice[]>([]);
+  const [requestDeviceSettings, setRequestDeviceSettings] = useState<RequestDeviceFirewallSettings>({
+    autoApproveNewRequestDevices: true,
+  });
   const [activeTab, setActiveTab] = useState<'access' | 'clients'>('access');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,6 +34,7 @@ export default function DeviceListScreen() {
       setDevices(response.clients);
       const requestDeviceResponse = await requestDeviceApi.list();
       setRequestDevices(requestDeviceResponse.devices);
+      setRequestDeviceSettings(requestDeviceResponse.settings);
     } catch {
       setError('获取设备列表失败');
     } finally {
@@ -216,6 +220,30 @@ export default function DeviceListScreen() {
     </View>
   );
 
+  const renderRequestDeviceSettings = () => (
+    <Card style={styles.settingsCard}>
+      <View style={styles.settingsHeader}>
+        <View style={styles.settingsContent}>
+          <Text style={styles.settingsTitle}>新设备自动放行</Text>
+          <Text style={styles.settingsDescription}>
+            开启后，新设备首次访问会直接放行；关闭后，需要在防火墙页面手动审批后才会转发。
+          </Text>
+        </View>
+        <Switch
+          value={requestDeviceSettings.autoApproveNewRequestDevices}
+          onValueChange={async (value) => {
+            try {
+              const updated = await requestDeviceApi.updateSettings({ autoApproveNewRequestDevices: value });
+              setRequestDeviceSettings(updated);
+            } catch {
+              setError('更新配置失败');
+            }
+          }}
+        />
+      </View>
+    </Card>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Header title="防火墙" />
@@ -246,10 +274,15 @@ export default function DeviceListScreen() {
           renderItem={({ item }) => renderRequestDeviceCard(item)}
           keyExtractor={(item) => item.deviceId}
           contentContainerStyle={styles.listContent}
+          ListHeaderComponent={renderRequestDeviceSettings}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>暂无访问设备</Text>
-              <Text style={styles.emptySubtitle}>新设备需要审批后才可访问</Text>
+              <Text style={styles.emptySubtitle}>
+                {requestDeviceSettings.autoApproveNewRequestDevices
+                  ? '新设备会默认自动放行'
+                  : '新设备需要审批后才可访问'}
+              </Text>
             </View>
           }
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
@@ -311,6 +344,29 @@ const styles = StyleSheet.create({
   },
   requestCard: {
     marginVertical: 6,
+  },
+  settingsCard: {
+    marginVertical: 6,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  settingsContent: {
+    flex: 1,
+    gap: 6,
+  },
+  settingsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  settingsDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#6B7280',
   },
   actionRow: {
     flexDirection: 'row',

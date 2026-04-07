@@ -15,13 +15,22 @@ export interface RequestDevice {
   updatedAt: string;
 }
 
+export interface RequestDeviceFirewallSettings {
+  autoApproveNewRequestDevices: boolean;
+}
+
 export interface RequestDeviceListResponse {
   devices: RequestDevice[];
+  settings: RequestDeviceFirewallSettings;
 }
 
 export const requestDeviceApi = {
   list: async (): Promise<RequestDeviceListResponse> => {
     const response = await api.get<{ success: true; data: RequestDeviceListResponse }>('/request-devices');
+    return response.data.data!;
+  },
+  updateSettings: async (settings: RequestDeviceFirewallSettings): Promise<RequestDeviceFirewallSettings> => {
+    const response = await api.patch<{ success: true; data: RequestDeviceFirewallSettings }>('/request-devices/settings', settings);
     return response.data.data!;
   },
   updateStatus: async (deviceId: string, status: 'approved' | 'blocked'): Promise<RequestDevice> => {
