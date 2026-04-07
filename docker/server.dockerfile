@@ -32,16 +32,20 @@ RUN pnpm build
 
 # Production image
 FROM base AS runner
-WORKDIR /app
+WORKDIR /app/packages/server
 
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 server
 
-COPY --from=server-builder /app/node_modules ./node_modules
+COPY --from=server-builder /app/node_modules /app/node_modules
+COPY --from=server-builder /app/packages/server/node_modules ./node_modules
+COPY --from=server-builder /app/packages/server/package.json ./package.json
 COPY --from=server-builder /app/packages/server/dist ./dist
-COPY --from=server-builder /app/packages/server/prisma ./prisma
+COPY --from=server-builder /app/packages/server/src/prisma ./src/prisma
+COPY --from=server-builder /app/packages/shared/package.json /app/packages/shared/package.json
+COPY --from=shared-builder /app/packages/shared/dist /app/packages/shared/dist
 
 RUN chown -R server:nodejs /app
 
