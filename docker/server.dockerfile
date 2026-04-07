@@ -38,6 +38,7 @@ ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 server
+RUN mkdir -p /app/packages/server/data
 
 COPY --from=server-builder /app/node_modules /app/node_modules
 COPY --from=server-builder /app/packages/server/node_modules ./node_modules
