@@ -1,0 +1,105 @@
+<view class="container" wx:if="{{tunnel}}">
+  <!-- Header Status -->
+  <view class="header-bar">
+    <view class="status-badge {{getEffectiveStatus()}}">
+      <view class="status-dot"></view>
+      <text>{{getEffectiveStatus() === 'online' ? '在线' : '离线'}}</text>
+    </view>
+    <view class="header-actions">
+      <view class="icon-btn" bindtap="handleToggle">
+        <text>⏻</text>
+      </view>
+      <view class="icon-btn icon-btn-danger" bindtap="handleDelete">
+        <text>🗑</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Access Info -->
+  <view class="card">
+    <text class="card-title">访问信息</text>
+    <view class="info-row">
+      <text class="info-label">访问路径</text>
+      <view class="info-value-row">
+        <text class="info-value url-text" numberOfLines="1">{{publicUrl}}</text>
+        <view class="copy-btn" bindtap="handleCopy">
+          <text>📋</text>
+        </view>
+      </view>
+    </view>
+    <view class="info-row">
+      <text class="info-label">协议</text>
+      <text class="info-value">{{tunnel.protocol.toUpperCase()}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">本地地址</text>
+      <text class="info-value">{{tunnel.localAddress}}</text>
+    </view>
+    <view class="info-row" wx:if="{{tunnel.localHostname}}">
+      <text class="info-label">本地 Host</text>
+      <text class="info-value">{{tunnel.localHostname}}</text>
+    </view>
+  </view>
+
+  <!-- Statistics -->
+  <view class="card" wx:if="{{stats}}">
+    <text class="card-title">流量统计</text>
+    <view class="stats-row">
+      <view class="stat-item">
+        <text class="stat-value">{{formatNumber(stats.totalRequests)}}</text>
+        <text class="stat-label">总请求</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{formatBytes(stats.bytesIn)}}</text>
+        <text class="stat-label">入站流量</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{formatBytes(stats.bytesOut)}}</text>
+        <text class="stat-label">出站流量</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Access Logs -->
+  <view class="card">
+    <text class="card-title">访问日志</text>
+    <view wx:if="{{logs.length === 0}}">
+      <text class="empty-logs">暂无访问日志</text>
+    </view>
+    <view wx:for="{{logs}}" wx:key="logId" wx:for-item="log">
+      <view class="log-row">
+        <view class="log-left">
+          <text class="log-path" numberOfLines="1">{{log.path}}</text>
+          <text class="log-meta">{{log.method}} · {{log.clientIp}}</text>
+        </view>
+        <view class="log-right">
+          <text class="log-status">{{log.statusCode}}</text>
+          <text class="log-time">{{log.responseTime}}ms</text>
+        </view>
+      </view>
+    </view>
+    <view class="pagination" wx:if="{{logTotal > logLimit}}">
+      <view class="page-btn {{logPage <= 1 ? 'disabled' : ''}}" bindtap="goToPrevPage">
+        <text>上一页</text>
+      </view>
+      <text class="page-text">{{logPage}} / {{getTotalPages()}}</text>
+      <view class="page-btn {{logPage >= getTotalPages() ? 'disabled' : ''}}" bindtap="goToNextPage">
+        <text>下一页</text>
+      </view>
+    </view>
+  </view>
+
+  <view style="height: 40px;"></view>
+
+  <!-- Toast -->
+  <view class="toast" wx:if="{{toastVisible}}">
+    <text>{{toastText}}</text>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading-mask" wx:if="{{loading}}">
+    <view class="loading-inner">
+      <text>加载中...</text>
+    </view>
+  </view>
+</view>

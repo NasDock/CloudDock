@@ -1,0 +1,67 @@
+<view class="container">
+  <view class="header">
+    <text class="title">CloudDock</text>
+    <text class="subtitle">内网穿透工具</text>
+  </view>
+
+  <view class="form">
+    <view class="form-item">
+      <text class="label">服务器地址</text>
+      <input
+        class="input {{errors.serverUrl ? 'input-error' : ''}}"
+        value="{{serverUrl}}"
+        bindinput="onServerUrlInput"
+        placeholder="https://cloud.audiodock.cn"
+        placeholder-class="placeholder"
+        adjust-position
+      />
+      <text class="error-text" wx:if="{{errors.serverUrl}}">{{errors.serverUrl}}</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">邮箱</text>
+      <input
+        class="input {{errors.email ? 'input-error' : ''}}"
+        value="{{email}}"
+        bindinput="onEmailInput"
+        placeholder="your@email.com"
+        placeholder-class="placeholder"
+        type="email"
+        adjust-position
+      />
+      <text class="error-text" wx:if="{{errors.email}}">{{errors.email}}</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">密码</text>
+      <input
+        class="input {{errors.password ? 'input-error' : ''}}"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+        placeholder="••••••••"
+        placeholder-class="placeholder"
+        password
+        adjust-position
+      />
+      <text class="error-text" wx:if="{{errors.password}}">{{errors.password}}</text>
+    </view>
+
+    <button
+      class="btn-primary"
+      bindtap="handleLogin"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+    >
+      登录
+    </button>
+
+    <button class="btn-outline" bindtap="goToRegister" disabled="{{loading}}">
+      没有账号？去注册
+    </button>
+  </view>
+
+  <!-- Error toast -->
+  <view class="error-toast" wx:if="{{globalError}}">
+    <text>{{globalError}}</text>
+  </view>
+</view>

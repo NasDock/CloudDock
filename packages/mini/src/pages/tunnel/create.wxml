@@ -1,0 +1,84 @@
+<view class="container">
+  <view class="form">
+    <!-- Tunnel Name -->
+    <view class="form-item">
+      <text class="label">隧道名称</text>
+      <input
+        class="input {{errors.name ? 'input-error' : ''}}"
+        value="{{name}}"
+        bindinput="onNameInput"
+        placeholder="例如：我的网站"
+        placeholder-class="placeholder"
+      />
+      <text class="error-text" wx:if="{{errors.name}}">{{errors.name}}</text>
+    </view>
+
+    <!-- Protocol -->
+    <view class="form-item">
+      <text class="label">协议</text>
+      <view class="protocol-options">
+        <view
+          class="protocol-btn {{protocol === 'http' ? 'active' : ''}}"
+          bindtap="onProtocolChange"
+          data-protocol="http"
+        >
+          <text>HTTP</text>
+        </view>
+        <view
+          class="protocol-btn {{protocol === 'tcp' ? 'active' : ''}}"
+          bindtap="onProtocolChange"
+          data-protocol="tcp"
+        >
+          <text>TCP</text>
+        </view>
+        <view
+          class="protocol-btn {{protocol === 'udp' ? 'active' : ''}}"
+          bindtap="onProtocolChange"
+          data-protocol="udp"
+        >
+          <text>UDP</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Local Address -->
+    <view class="form-item">
+      <text class="label">本地地址</text>
+      <input
+        class="input {{errors.localAddress ? 'input-error' : ''}}"
+        value="{{localAddress}}"
+        bindinput="onLocalAddressInput"
+        placeholder="{{protocol === 'http' ? 'localhost:3000' : 'localhost:8080'}}"
+        placeholder-class="placeholder"
+      />
+      <text class="error-text" wx:if="{{errors.localAddress}}">{{errors.localAddress}}</text>
+      <text class="hint-text">隧道转发到的本地服务地址</text>
+    </view>
+
+    <!-- Local Hostname (HTTP only) -->
+    <view class="form-item" wx:if="{{protocol === 'http'}}">
+      <text class="label">本地 Host（可选）</text>
+      <input
+        class="input"
+        value="{{localHostname}}"
+        bindinput="onLocalHostnameInput"
+        placeholder="example.com"
+        placeholder-class="placeholder"
+      />
+      <text class="hint-text">用于 HTTP 头部的 Host 域名</text>
+    </view>
+
+    <button
+      class="btn-primary"
+      bindtap="handleSubmit"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+    >
+      创建隧道
+    </button>
+  </view>
+
+  <view class="error-toast" wx:if="{{error}}">
+    <text>{{error}}</text>
+  </view>
+</view>

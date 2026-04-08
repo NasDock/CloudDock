@@ -1,0 +1,92 @@
+<view class="container">
+  <!-- Search -->
+  <view class="search-bar">
+    <input
+      class="search-input"
+      placeholder="搜索隧道..."
+      value="{{searchQuery}}"
+      bindinput="onSearchInput"
+      placeholder-class="placeholder"
+    />
+  </view>
+
+  <!-- Filter Tabs -->
+  <view class="filter-tabs">
+    <view
+      class="filter-tab {{filter === 'all' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-filter="all"
+    >
+      全部
+    </view>
+    <view
+      class="filter-tab {{filter === 'online' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-filter="online"
+    >
+      在线
+    </view>
+    <view
+      class="filter-tab {{filter === 'offline' ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-filter="offline"
+    >
+      离线
+    </view>
+  </view>
+
+  <!-- Tunnel List -->
+  <view class="tunnel-list" wx:if="{{filteredTunnels.length > 0}}">
+    <view
+      class="tunnel-card"
+      wx:for="{{filteredTunnels}}"
+      wx:key="tunnelId"
+      bindtap="goToDetail"
+      data-tunnel-id="{{item.tunnelId}}"
+    >
+      <view class="tunnel-header">
+        <view class="tunnel-title-row">
+          <text class="tunnel-name">{{item.name}}</text>
+          <view class="tunnel-status {{getEffectiveStatus(item)}}">
+            <view class="status-dot"></view>
+            <text class="status-text">{{getEffectiveStatus(item) === 'online' ? '在线' : '离线'}}</text>
+          </view>
+        </view>
+      </view>
+      <text class="tunnel-url">{{getPublicUrl(item.publicPath)}}</text>
+      <view class="tunnel-meta">
+        <text class="tunnel-device">{{item.clientId ? clientNames[item.clientId] || '默认设备' : '默认设备'}}</text>
+        <text class="tunnel-protocol">{{item.protocol.toUpperCase()}}</text>
+      </view>
+      <view class="tunnel-actions">
+        <view class="action-btn" bindtap="handleCopy" data-tunnel="{{item}}">
+          <text>复制</text>
+        </view>
+        <view class="action-btn" bindtap="handleToggle" data-tunnel="{{item}}">
+          <text>{{item.enabled === false ? '上线' : '下线'}}</text>
+        </view>
+        <view class="action-btn action-delete" bindtap="handleDelete" data-tunnel="{{item}}">
+          <text>删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{filteredTunnels.length === 0 && !loading}}">
+    <text class="empty-title">没有找到隧道</text>
+    <text class="empty-subtitle">{{searchQuery ? '尝试其他搜索词' : '创建你的第一个隧道'}}</text>
+  </view>
+
+  <view style="height: 100px;"></view>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="goToCreate">
+    <text class="fab-text">+</text>
+  </view>
+
+  <!-- Toast -->
+  <view class="toast" wx:if="{{toastVisible}}">
+    <text>{{toastText}}</text>
+  </view>
+</view>

@@ -1,0 +1,157 @@
+.container {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+}
+
+.profile-card {
+  background-color: #FFFFFF;
+  margin: 16px;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background-color: #6366F1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-text {
+  font-size: 28px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.username {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.email {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.plan-badge {
+  background-color: #FEF3C7;
+  padding: 4px 12px;
+  border-radius: 12px;
+  align-self: flex-start;
+  margin-top: 12px;
+}
+
+.plan-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400E;
+}
+
+.section-title-bar {
+  padding: 16px 16px 8px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.card {
+  background-color: #FFFFFF;
+  margin: 0 16px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.list-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.list-item-icon {
+  font-size: 16px;
+}
+
+.list-item-title {
+  font-size: 15px;
+  color: #1F2937;
+}
+
+.list-item-arrow {
+  font-size: 20px;
+  color: #9CA3AF;
+}
+
+.list-item-desc {
+  font-size: 14px;
+  color: #9CA3AF;
+}
+
+.divider {
+  height: 1px;
+  background-color: #F3F4F6;
+  margin: 0 16px;
+}
+
+.logout-section {
+  margin-top: 24px;
+  padding: 0 16px;
+}
+
+.btn-logout {
+  height: 44px;
+  background-color: #FFFFFF;
+  color: #EF4444;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
