@@ -110,6 +110,14 @@ export class HttpProxy {
         bytesOut,
       });
 
+      if (response.headers) {
+        for (const [key, value] of Object.entries(response.headers)) {
+          const k = key.toLowerCase();
+          if (value !== undefined && k !== 'transfer-encoding' && k !== 'connection') {
+            this.reply.header(key, value);
+          }
+        }
+      }
       this.reply.status(response.statusCode).send(response.body);
     } catch (err: any) {
       await this.createAccessLog({
