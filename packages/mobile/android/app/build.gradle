@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.nattunnel.app'
+    namespace 'com.clouddock.app'
     defaultConfig {
-        applicationId 'com.nattunnel.app'
+        applicationId 'com.clouddock.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

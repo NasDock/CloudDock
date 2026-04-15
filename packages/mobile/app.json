@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nattunnel.app",
+      "bundleIdentifier": "com.clouddock.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow CloudDock to use the microphone for real-time connections.",
         "NSCameraUsageDescription": "Allow CloudDock to use the camera for real-time connections."
@@ -28,7 +28,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.nattunnel.app",
+      "package": "com.clouddock.app",
       "permissions": [
         "CAMERA",
         "NOTIFICATIONS",
