@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -28,6 +29,37 @@ export default {
         danger: {
           500: '#ef4444',
           600: '#dc2626',
+        },
+        // Black/white theme colors
+        bw: {
+          bg: 'var(--bg-primary)',
+          'bg-secondary': 'var(--bg-secondary)',
+          'bg-tertiary': 'var(--bg-tertiary)',
+          text: 'var(--text-primary)',
+          'text-secondary': 'var(--text-secondary)',
+          'text-tertiary': 'var(--text-tertiary)',
+          border: 'var(--border-color)',
+          'border-strong': 'var(--border-strong)',
+        },
+      },
+      textColor: {
+        bw: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          tertiary: 'var(--text-tertiary)',
+        },
+      },
+      backgroundColor: {
+        bw: {
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          tertiary: 'var(--bg-tertiary)',
+        },
+      },
+      borderColor: {
+        bw: {
+          DEFAULT: 'var(--border-color)',
+          strong: 'var(--border-strong)',
         },
       },
     },

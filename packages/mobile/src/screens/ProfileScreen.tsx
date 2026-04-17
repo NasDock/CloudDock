@@ -7,6 +7,7 @@ import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { LoadingOverlay } from '../components/ui/LoadingOverlay';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
 import { formatDate } from '../utils/formatters';
 
@@ -66,7 +67,14 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Settings */}
-        <Card title="设置">
+        <Card title="外观">
+          <View style={styles.themeSection}>
+            <Text style={styles.themeLabel}>主题模式</Text>
+            <ThemeToggle />
+          </View>
+        </Card>
+
+        <Card title="设置" style={styles.settingsCard}>
           <List.Item
             title="编辑资料"
             description="修改用户名"
@@ -149,6 +157,17 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     marginTop: 16,
+  },
+  themeSection: {
+    paddingVertical: 8,
+  },
+  themeLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  settingsCard: {
+    marginTop: 8,
   },
   profileHeader: {
     flexDirection: 'row',
