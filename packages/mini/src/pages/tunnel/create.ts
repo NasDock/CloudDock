@@ -71,9 +71,9 @@ Page({
           }
         },
       });
-    } catch {
-      const app = getApp<IAppOption>();
-      this.setData({ error: app.globalData.error || '创建失败' });
+    } catch (err: any) {
+      const msg = err?.message || err?.error?.message || '创建失败';
+      this.setData({ error: msg });
     } finally {
       this.setData({ loading: false });
     }

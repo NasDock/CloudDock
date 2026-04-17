@@ -9,8 +9,6 @@ import {
   useThemeStore,
   lightTheme,
   darkTheme,
-  startThemePolling,
-  stopThemePolling,
 } from './stores/themeStore';
 
 // Create a client
@@ -29,7 +27,6 @@ function AppContent() {
 
   useEffect(() => {
     checkAuth();
-    return () => stopThemePolling();
   }, [checkAuth]);
 
   const statusBarStyle = resolvedTheme === 'dark' ? 'light' : 'dark';
@@ -47,7 +44,6 @@ function ThemedApp() {
 
   useEffect(() => {
     init();
-    startThemePolling();
   }, []);
 
   if (isLoading) {

@@ -82,7 +82,7 @@
       <view
         class="device-card"
         wx:for="{{requestDevices}}"
-        wx:key="deviceId"
+        wx:key="requestDeviceId"
         wx:for-item="device"
       >
         <view class="card-header">
@@ -93,7 +93,7 @@
         </view>
         <view class="card-info-row">
           <text class="info-label">设备ID</text>
-          <text class="info-value">{{device.deviceId}}</text>
+          <text class="info-value">{{device.requestDeviceId}}</text>
         </view>
         <view class="card-info-row" wx:if="{{device.platform}}">
           <text class="info-label">平台</text>

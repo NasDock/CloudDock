@@ -1,0 +1,35 @@
+<view class="container">
+  <view class="section-title-bar">
+    <text class="section-title">账户设置</text>
+  </view>
+  <view class="card">
+    <view class="list-item" bindtap="goToNotifications">
+      <view class="list-item-left">
+        <text class="list-item-icon">🔔</text>
+        <text class="list-item-title">通知设置</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+    <view class="divider"></view>
+    <view class="list-item" bindtap="goToSecurity">
+      <view class="list-item-left">
+        <text class="list-item-icon">🔒</text>
+        <text class="list-item-title">安全设置</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="section-title-bar">
+    <text class="section-title">其他</text>
+  </view>
+  <view class="card">
+    <view class="list-item" bindtap="goToAbout">
+      <view class="list-item-left">
+        <text class="list-item-icon">ℹ️</text>
+        <text class="list-item-title">关于</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+  </view>
+</view>

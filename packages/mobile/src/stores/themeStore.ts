@@ -113,8 +113,8 @@ interface ThemeState {
   isLoading: boolean;
   setMode: (mode: ThemeMode) => Promise<void>;
   init: () => Promise<void>;
-  _startPolling: () => void;
-  _stopPolling: () => void;
+  _startListening: () => void;
+  _stopListening: () => void;
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
@@ -132,83 +132,37 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   init: async () => {
     try {
       const storedMode = (await AsyncStorage.getItem('themeMode')) as ThemeMode | null;
-      // Also get stored resolved theme for system mode
       const storedResolved = (await AsyncStorage.getItem('systemTheme')) as ResolvedTheme | null;
       const mode = storedMode || 'system';
       const resolved = mode === 'system'
         ? (storedResolved || 'light')
         : (mode as ResolvedTheme);
       set({ mode, resolvedTheme: resolved, isLoading: false });
-      get()._startPolling();
+      get()._startListening();
     } catch {
       set({ isLoading: false });
-      get()._startPolling();
+      get()._startListening();
     }
   },
 
-  _startPolling: () => {
-    const poll = () => {
+  _startListening: () => {
+    const { Appearance } = require('react-native');
+    const subscription = Appearance.addEventListener('change', ({ type }) => {
       const { mode } = get();
       if (mode === 'system') {
-        try {
-          const { Appearance } = require('react-native');
-          const colorScheme = Appearance.getColorScheme();
-          const systemDark = colorScheme === 'dark';
-          const { resolvedTheme } = get();
-          const newResolved: ResolvedTheme = systemDark ? 'dark' : 'light';
-          if (newResolved !== resolvedTheme) {
-            set({ resolvedTheme: newResolved });
-            AsyncStorage.setItem('systemTheme', newResolved);
-          }
-        } catch {
-          // Ignore
-        }
+        const newResolved: ResolvedTheme = type === 'dark' ? 'dark' : 'light';
+        set({ resolvedTheme: newResolved });
+        AsyncStorage.setItem('systemTheme', newResolved);
       }
-    };
-
-    // Poll every second
-    const id = setInterval(poll, 1000);
-    // Also store the interval id reference in the store state
-    setTimeout(() => {
-      // Clear the interval after setting it up
-      // (we just use the interval continuously for simplicity)
-    }, 0);
+    });
+    // Store subscription for cleanup if needed
+    (get as any)._appearanceSubscription = subscription;
   },
 
-  _stopPolling: () => {
-    // Note: In React, we handle cleanup in useEffect
-    // The polling runs via setInterval globally
+  _stopListening: () => {
+    const subscription = (get as any)._appearanceSubscription;
+    if (subscription?.remove) {
+      subscription.remove();
+    }
   },
 }));
-
-// Cleanup function to be called on unmount
-let _pollInterval: ReturnType<typeof setInterval> | null = null;
-
-export const startThemePolling = () => {
-  if (_pollInterval) return;
-  _pollInterval = setInterval(() => {
-    const { mode } = useThemeStore.getState();
-    if (mode === 'system') {
-      try {
-        const { Appearance } = require('react-native');
-        const colorScheme = Appearance.getColorScheme();
-        const systemDark = colorScheme === 'dark';
-        const { resolvedTheme } = useThemeStore.getState();
-        const newResolved: ResolvedTheme = systemDark ? 'dark' : 'light';
-        if (newResolved !== resolvedTheme) {
-          useThemeStore.setState({ resolvedTheme: newResolved });
-          AsyncStorage.setItem('systemTheme', newResolved);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-  }, 1000);
-};
-
-export const stopThemePolling = () => {
-  if (_pollInterval) {
-    clearInterval(_pollInterval);
-    _pollInterval = null;
-  }
-};

@@ -3,6 +3,14 @@
   background-color: #F9FAFB;
 }
 
+.status-changed-banner {
+  background-color: #6366F1;
+  color: #FFFFFF;
+  text-align: center;
+  padding: 8px;
+  font-size: 13px;
+}
+
 .header-bar {
   background-color: #FFFFFF;
   padding: 12px 16px;

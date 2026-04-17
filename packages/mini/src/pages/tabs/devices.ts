@@ -130,10 +130,10 @@ Page({
     const action: string = e.currentTarget.dataset.action;
 
     try {
-      const updated = await requestDeviceApi.updateStatus(device.deviceId, action as 'approved' | 'blocked');
+      const updated = await requestDeviceApi.updateStatus(device.requestDeviceId, action as 'approved' | 'blocked');
       this.setData((prev: any) => ({
         requestDevices: prev.requestDevices.map((d: RequestDevice) =>
-          d.deviceId === updated.deviceId ? updated : d
+          d.requestDeviceId === updated.requestDeviceId ? updated : d
         ),
       }));
     } catch {
@@ -144,9 +144,9 @@ Page({
   async handleRequestDeviceRemove(e: any) {
     const device: RequestDevice = e.currentTarget.dataset.device;
     try {
-      await requestDeviceApi.remove(device.deviceId);
+      await requestDeviceApi.remove(device.requestDeviceId);
       this.setData((prev: any) => ({
-        requestDevices: prev.requestDevices.filter((d: RequestDevice) => d.deviceId !== device.deviceId),
+        requestDevices: prev.requestDevices.filter((d: RequestDevice) => d.requestDeviceId !== device.requestDeviceId),
       }));
     } catch {
       wx.showToast({ title: '删除失败', icon: 'none' });

@@ -15,14 +15,66 @@ Page({
     toastText: '',
     toastVisible: false,
     publicUrl: '',
+    statusUpdated: false,
   },
+
+  _pollTimer: number | null = null,
+  _currentTunnelId: string = '',
 
   onLoad(query: { tunnelId?: string }) {
     if (!query.tunnelId) {
       wx.navigateBack();
       return;
     }
+    this._currentTunnelId = query.tunnelId;
     this.loadData(query.tunnelId);
+    this.startPolling();
+  },
+
+  onHide() {
+    this.stopPolling();
+  },
+
+  onUnload() {
+    this.stopPolling();
+  },
+
+  startPolling() {
+    if (this._pollTimer !== null) return;
+    this._pollTimer = setTimeout(() => {
+      this.pollStatus();
+    }, 30 * 1000) as unknown as number;
+  },
+
+  stopPolling() {
+    if (this._pollTimer !== null) {
+      clearTimeout(this._pollTimer);
+      this._pollTimer = null;
+    }
+  },
+
+  async pollStatus() {
+    if (!this._currentTunnelId) return;
+    try {
+      const data = await tunnelApi.get(this._currentTunnelId);
+      const prevTunnel: any = this.data.tunnel;
+      const prevStatus = prevTunnel ? (prevTunnel.enabled === false ? 'offline' : prevTunnel.status) : '';
+      const newStatus = data.enabled === false ? 'offline' : data.status;
+      const statusChanged = prevStatus !== '' && prevStatus !== newStatus;
+      this.setData({
+        tunnel: data,
+        stats: data.statistics,
+        statusUpdated: statusChanged,
+      });
+      if (statusChanged) {
+        // Status changed notification - auto-hide after 3s
+        setTimeout(() => this.setData({ statusUpdated: false }), 3000);
+      }
+    } catch {
+      // Silently fail polling
+    } finally {
+      this.startPolling();
+    }
   },
 
   async loadData(tunnelId: string) {

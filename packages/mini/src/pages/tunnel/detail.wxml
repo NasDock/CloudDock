@@ -1,4 +1,9 @@
 <view class="container" wx:if="{{tunnel}}">
+  <!-- Status Changed Banner -->
+  <view class="status-changed-banner" wx:if="{{statusUpdated}}">
+    <text>状态已更新</text>
+  </view>
+
   <!-- Header Status -->
   <view class="header-bar">
     <view class="status-badge {{getEffectiveStatus()}}">

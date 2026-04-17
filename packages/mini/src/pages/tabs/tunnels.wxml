@@ -24,14 +24,14 @@
       bindtap="onFilterChange"
       data-filter="online"
     >
-      在线
+      在线 {{onlineCount > 0 ? '(' + onlineCount + ')' : ''}}
     </view>
     <view
       class="filter-tab {{filter === 'offline' ? 'active' : ''}}"
       bindtap="onFilterChange"
       data-filter="offline"
     >
-      离线
+      离线 {{offlineCount > 0 ? '(' + offlineCount + ')' : ''}}
     </view>
   </view>
 

@@ -15,6 +15,21 @@
     </view>
   </view>
 
+  <!-- Statistics -->
+  <view class="stats-card">
+    <view class="stats-item" bindtap="goToDevices">
+      <text class="stats-value">{{stats.deviceOnline}}</text>
+      <text class="stats-label">在线设备</text>
+      <text class="stats-total">/ {{stats.deviceTotal}} 台</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item" bindtap="goToTunnels">
+      <text class="stats-value">{{stats.tunnelOnline}}</text>
+      <text class="stats-label">在线隧道</text>
+      <text class="stats-total">/ {{stats.tunnelTotal}} 条</text>
+    </view>
+  </view>
+
   <!-- Account Info -->
   <view class="section-title-bar">
     <text class="section-title">账号信息</text>
@@ -35,26 +50,10 @@
     <text class="section-title">设置</text>
   </view>
   <view class="card">
-    <view class="list-item" bindtap="showDevAlert">
+    <view class="list-item" bindtap="goToSettings">
       <view class="list-item-left">
-        <text class="list-item-icon">✏️</text>
-        <text class="list-item-title">编辑资料</text>
-      </view>
-      <text class="list-item-arrow">›</text>
-    </view>
-    <view class="divider"></view>
-    <view class="list-item" bindtap="showDevAlert">
-      <view class="list-item-left">
-        <text class="list-item-icon">🔒</text>
-        <text class="list-item-title">修改密码</text>
-      </view>
-      <text class="list-item-arrow">›</text>
-    </view>
-    <view class="divider"></view>
-    <view class="list-item" bindtap="showDevAlert">
-      <view class="list-item-left">
-        <text class="list-item-icon">🔔</text>
-        <text class="list-item-title">通知设置</text>
+        <text class="list-item-icon">⚙️</text>
+        <text class="list-item-title">账户设置</text>
       </view>
       <text class="list-item-arrow">›</text>
     </view>
@@ -65,25 +64,17 @@
     <text class="section-title">关于</text>
   </view>
   <view class="card">
-    <view class="list-item" bindtap="showDevAlert">
+    <view class="list-item" bindtap="goToAbout">
       <view class="list-item-left">
-        <text class="list-item-icon">📄</text>
-        <text class="list-item-title">使用条款</text>
-      </view>
-      <text class="list-item-arrow">›</text>
-    </view>
-    <view class="divider"></view>
-    <view class="list-item" bindtap="showDevAlert">
-      <view class="list-item-left">
-        <text class="list-item-icon">🛡️</text>
-        <text class="list-item-title">隐私政策</text>
+        <text class="list-item-icon">ℹ️</text>
+        <text class="list-item-title">关于 CloudDock</text>
       </view>
       <text class="list-item-arrow">›</text>
     </view>
     <view class="divider"></view>
     <view class="list-item">
       <view class="list-item-left">
-        <text class="list-item-icon">ℹ️</text>
+        <text class="list-item-icon">📱</text>
         <text class="list-item-title">版本信息</text>
       </view>
       <text class="list-item-desc">v1.0.0</text>

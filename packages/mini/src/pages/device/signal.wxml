@@ -1,0 +1,144 @@
+<view class="container">
+
+  <!-- Header Info -->
+  <view class="session-header">
+    <view class="session-info">
+      <text class="label">设备ID</text>
+      <text class="value">{{deviceId}}</text>
+    </view>
+    <view class="session-info">
+      <text class="label">角色</text>
+      <text class="value role-{{role}}">{{role === 'caller' ? '发起方' : '接收方'}}</text>
+    </view>
+  </view>
+
+  <!-- Status Badge -->
+  <view class="status-section">
+    <view class="status-badge {{mode}}">
+      <text wx:if="{{mode === 'idle'}}">待机</text>
+      <text wx:elif="{{mode === 'connecting'}}">连接中</text>
+      <text wx:elif="{{mode === 'waiting_answer'}}">等待应答</text>
+      <text wx:elif="{{mode === 'connected'}}">已连接</text>
+      <text wx:elif="{{mode === 'failed'}}">连接失败</text>
+      <text wx:elif="{{mode === 'closed'}}">已关闭</text>
+    </view>
+
+    <view class="error-msg" wx:if="{{error}}">
+      <text>{{error}}</text>
+    </view>
+  </view>
+
+  <!-- ICE Candidates -->
+  <view class="section" wx:if="{{iceCandidates.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">ICE Candidates</text>
+      <text class="section-count">{{iceCandidates.length}}</text>
+    </view>
+    <view class="ice-list">
+      <view class="ice-item" wx:for="{{iceCandidates}}" wx:key="index">
+        <text class="ice-index">{{index + 1}}</text>
+        <text class="ice-content">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- SDP Info -->
+  <view class="section" wx:if="{{offerSdp || answerSdp}}">
+    <view class="section-header">
+      <text class="section-title">SDP 交换</text>
+      <button class="btn-copy" size="mini" bindtap="handleCopySdp">复制</button>
+    </view>
+    <view class="sdp-item" wx:if="{{offerSdp}}">
+      <text class="sdp-label">Offer SDP</text>
+      <text class="sdp-preview">{{offerSdp}}</text>
+    </view>
+    <view class="sdp-item" wx:if="{{answerSdp}}">
+      <text class="sdp-label">Answer SDP</text>
+      <text class="sdp-preview">{{answerSdp}}</text>
+    </view>
+  </view>
+
+  <!-- Manual SDP Exchange -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">手动信令交换</text>
+      <button class="btn-toggle" size="mini" bindtap="toggleManualExchange">
+        {{showManualExchange ? '收起' : '展开'}}
+      </button>
+    </view>
+
+    <view class="manual-panel" wx:if="{{showManualExchange}}">
+      <!-- Local SDP -->
+      <view class="input-group" wx:if="{{role === 'caller'}}">
+        <text class="input-label">你的 Offer SDP</text>
+        <textarea
+          class="sdp-textarea"
+          placeholder="粘贴你的 Offer SDP..."
+          value="{{localSdpInput}}"
+          bindinput="onOfferInput"
+          maxlength="8192"
+        />
+        <button class="btn-action" bindtap="handleSubmitOffer">发送 Offer</button>
+      </view>
+
+      <!-- Remote SDP -->
+      <view class="input-group">
+        <text class="input-label">远程 SDP</text>
+        <textarea
+          class="sdp-textarea"
+          placeholder="{{role === 'caller' ? '粘贴对方的 Answer SDP...' : '粘贴对方的 Offer SDP...'}}"
+          value="{{remoteSdpInput}}"
+          bindinput="onRemoteSdpInput"
+          maxlength="8192"
+        />
+        <!-- Caller: paste answer -->
+        <view class="btn-row" wx:if="{{role === 'caller'}}">
+          <button class="btn-action" bindtap="handleSubmitAnswer">设置 Answer</button>
+        </view>
+        <!-- Callee: paste offer + generate answer -->
+        <view class="btn-row" wx:if="{{role === 'callee'}}">
+          <button class="btn-action" bindtap="handleRemoteOffer">设置 Offer</button>
+          <button class="btn-action secondary" bindtap="handleGenerateAnswer">生成 Answer</button>
+        </view>
+      </view>
+
+      <!-- ICE Candidate Input -->
+      <view class="input-group">
+        <text class="input-label">ICE Candidate (JSON)</text>
+        <textarea
+          class="sdp-textarea"
+          placeholder='{"candidate":"...","sdpMid":null,"sdpMLineIndex":null}'
+          value="{{remoteSdpInput}}"
+          bindinput="onRemoteSdpInput"
+          maxlength="1024"
+        />
+        <button class="btn-action secondary" bindtap="handleAddIceCandidate">添加 Candidate</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Actions -->
+  <view class="actions">
+    <!-- Idle: start -->
+    <button
+      wx:if="{{mode === 'idle' || mode === 'closed' || mode === 'failed'}}"
+      class="btn-primary"
+      bindtap="startSignaling"
+    >{{mode === 'failed' ? '重试连接' : '开始信令'}}</button>
+
+    <!-- Connecting / waiting: stop -->
+    <button
+      wx:if="{{mode === 'connecting' || mode === 'waiting_answer' || mode === 'connected'}}"
+      class="btn-danger"
+      bindtap="stopSignaling"
+    >断开连接</button>
+
+    <!-- Failed: retry shown above -->
+  </view>
+
+  <!-- Toast -->
+  <view class="toast" wx:if="{{toastVisible}}">
+    <text>{{toastText}}</text>
+  </view>
+
+</view>

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useThemeStore } from '@/stores/themeStore';
 
 export const useTheme = () => {
-  const { mode, resolvedTheme, setMode, pollSystemTheme } = useThemeStore();
+  const { mode, resolvedTheme, setMode } = useThemeStore();
 
   // Initialize theme on mount (apply correct class to <html>)
   useEffect(() => {
@@ -17,23 +17,24 @@ export const useTheme = () => {
 
     applyTheme();
 
-    // Set up polling to detect system theme changes
-    const intervalId = setInterval(pollSystemTheme, 1000);
-
-    // Also listen for system theme change events
+    // Listen for system theme change events
     const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
     const handleChange = () => {
+      const { mode } = useThemeStore.getState();
       if (mode === 'system') {
-        pollSystemTheme();
+        const resolved = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.add(resolved);
+        document.documentElement.setAttribute('data-theme', resolved);
+        useThemeStore.setState({ resolvedTheme: resolved });
       }
     };
     mediaQuery?.addEventListener('change', handleChange);
 
     return () => {
-      clearInterval(intervalId);
       mediaQuery?.removeEventListener('change', handleChange);
     };
-  }, [mode, pollSystemTheme]);
+  }, [mode]);
 
   return { mode, resolvedTheme, setMode };
 };

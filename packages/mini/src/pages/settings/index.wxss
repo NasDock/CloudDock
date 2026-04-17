@@ -1,0 +1,55 @@
+.container {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+}
+
+.section-title-bar {
+  padding: 16px 16px 8px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.card {
+  background-color: #FFFFFF;
+  margin: 0 16px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.list-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.list-item-icon {
+  font-size: 16px;
+}
+
+.list-item-title {
+  font-size: 15px;
+  color: #1F2937;
+}
+
+.list-item-arrow {
+  font-size: 20px;
+  color: #9CA3AF;
+}
+
+.divider {
+  height: 1px;
+  background-color: #F3F4F6;
+  margin: 0 16px;
+}

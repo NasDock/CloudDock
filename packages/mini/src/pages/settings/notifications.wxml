@@ -1,0 +1,53 @@
+<view class="container">
+  <view class="section-desc">
+    <text class="desc-text">管理您的通知接收偏好</text>
+  </view>
+
+  <view class="card">
+    <view class="switch-item">
+      <view class="switch-item-left">
+        <text class="switch-title">推送通知</text>
+        <text class="switch-desc">接收微信服务通知</text>
+      </view>
+      <switch checked="{{pushEnabled}}" bindchange="onPushEnabledChange" color="#6366F1" />
+    </view>
+  </view>
+
+  <view class="section-title-bar">
+    <text class="section-title">通知类型</text>
+  </view>
+  <view class="card">
+    <view class="switch-item">
+      <view class="switch-item-left">
+        <text class="switch-title">设备状态提醒</text>
+        <text class="switch-desc">设备上线/下线时通知</text>
+      </view>
+      <switch checked="{{deviceAlertEnabled}}" bindchange="onDeviceAlertChange" color="#6366F1" />
+    </view>
+    <view class="divider"></view>
+    <view class="switch-item">
+      <view class="switch-item-left">
+        <text class="switch-title">隧道状态提醒</text>
+        <text class="switch-desc">隧道异常时通知</text>
+      </view>
+      <switch checked="{{tunnelAlertEnabled}}" bindchange="onTunnelAlertChange" color="#6366F1" />
+    </view>
+  </view>
+
+  <view class="section-title-bar">
+    <text class="section-title">邮件通知</text>
+  </view>
+  <view class="card">
+    <view class="switch-item">
+      <view class="switch-item-left">
+        <text class="switch-title">邮件通知</text>
+        <text class="switch-desc">发送重要通知到邮箱</text>
+      </view>
+      <switch checked="{{emailEnabled}}" bindchange="onEmailChange" color="#6366F1" />
+    </view>
+  </view>
+
+  <view class="save-hint">
+    <text class="save-hint-text">设置已自动保存</text>
+  </view>
+</view>

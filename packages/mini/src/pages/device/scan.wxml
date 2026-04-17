@@ -1,60 +1,132 @@
 <view class="container">
-  <!-- Permission Request -->
-  <view class="centered" wx:if="{{!hasCameraPermission && !permissionLoading}}">
-    <text class="message">需要相机权限来扫描二维码</text>
-    <button class="btn-primary" bindtap="requestPermission">授予权限</button>
+
+  <!-- ========== Permission Request ========== -->
+  <view class="state-panel" wx:if="{{mode === 'permission'}}">
+    <view class="icon-wrap">
+      <text class="icon">📷</text>
+    </view>
+    <text class="title">需要相机权限</text>
+    <text class="subtitle">用于扫描二维码绑定 NAS 设备或建立 P2P 连接</text>
+    <button class="btn-primary" bindtap="requestPermission">授予相机权限</button>
+    <button class="btn-secondary" bindtap="handleStartScan">使用扫码器</button>
   </view>
 
-  <view class="centered" wx:if="{{permissionLoading}}">
-    <text class="message">请求相机权限中...</text>
-  </view>
+  <!-- ========== Scan Mode ========== -->
+  <view class="state-panel scan-mode" wx:if="{{mode === 'scan'}}">
+    <view class="scan-header">
+      <text class="title">扫描二维码</text>
+      <text class="subtitle">对准设备上的二维码进行扫描</text>
+    </view>
 
-  <!-- Camera -->
-  <view class="camera-wrap" wx:if="{{hasCameraPermission}}">
-    <camera
-      device-position="back"
-      flash="off"
-      bindscancode="onScanSuccess"
-      style="width: 100%; height: 100%;"
-    />
-
-    <!-- Scan Overlay -->
-    <view class="scan-overlay">
-      <view class="scan-area">
+    <!-- Camera Preview (decorative — actual scan uses wx.scanCode) -->
+    <view class="camera-preview">
+      <view class="camera-placeholder">
+        <text class="icon-large">📱</text>
+        <text class="placeholder-text">点击下方按钮\n打开扫码</text>
+      </view>
+      <!-- Scan Frame Overlay -->
+      <view class="scan-frame">
         <view class="corner top-left"></view>
         <view class="corner top-right"></view>
         <view class="corner bottom-left"></view>
         <view class="corner bottom-right"></view>
+        <view class="scan-line"></view>
       </view>
     </view>
-  </view>
 
-  <!-- Instructions -->
-  <view class="instructions">
-    <view class="instructions-card">
-      <text class="instructions-title">扫码说明</text>
-      <text class="instructions-text">
-        1. 在 NAS 管理界面生成绑定二维码\n
-        2. 将二维码对准相机\n
-        3. 确认绑定请求
+    <!-- Scan Actions -->
+    <view class="scan-actions">
+      <button class="btn-scan" bindtap="handleStartScan" loading="{{scanned}}">
+        扫描二维码
+      </button>
+    </view>
+
+    <!-- Help -->
+    <view class="help-card">
+      <text class="help-title">支持格式</text>
+      <text class="help-text">
+        • 设备绑定码：NAS 管理界面生成的绑定二维码\n
+        • P2P 信令码：设备详情页的远程连接二维码\n
+        • 传统 Token：包含 "." 的设备绑定字符串
       </text>
     </view>
   </view>
 
-  <!-- Rescan Button -->
-  <view class="rescan-wrap" wx:if="{{scanned && !binding}}">
-    <button class="btn-rescan" bindtap="handleRescan">重新扫描</button>
+  <!-- ========== Binding Loading ========== -->
+  <view class="state-panel" wx:if="{{mode === 'binding'}}">
+    <view class="spinner"></view>
+    <text class="title">正在绑定设备...</text>
+    <text class="subtitle">请稍候</text>
   </view>
 
-  <!-- Binding Loading -->
-  <view class="loading-overlay" wx:if="{{binding}}">
-    <view class="loading-box">
-      <text class="loading-text">绑定中...</text>
+  <!-- ========== Signaling Result ========== -->
+  <view class="state-panel result-mode" wx:if="{{mode === 'result'}}">
+    <view class="icon-wrap">
+      <text class="icon" wx:if="{{signalStatus === 'connected'}}">✅</text>
+      <text class="icon" wx:elif="{{signalStatus === 'connecting'}}">🔗</text>
+      <text class="icon" wx:elif="{{signalStatus === 'failed'}}">❌</text>
+      <text class="icon" wx:else>📡</text>
+    </view>
+
+    <text class="title" wx:if="{{signalStatus === 'connecting'}}">正在建立 P2P 连接...</text>
+    <text class="title" wx:elif="{{signalStatus === 'connected'}}">P2P 连接已建立</text>
+    <text class="title" wx:elif="{{signalStatus === 'failed'}}">连接失败</text>
+    <text class="title" wx:else>等待连接</text>
+
+    <text class="subtitle" wx:if="{{signalStatus === 'connecting'}}">
+      设备ID: {{sessionId}}\n信令交换中，请稍候
+    </text>
+    <text class="subtitle" wx:elif="{{signalStatus === 'connected'}}">
+      与设备的远程连接通道已就绪\n可进行远程管理操作
+    </text>
+
+    <view class="status-badge {{signalStatus}}">
+      <text wx:if="{{signalStatus === 'connecting'}}">连接中</text>
+      <text wx:elif="{{signalStatus === 'connected'}}">已连接</text>
+      <text wx:elif="{{signalStatus === 'failed'}}">连接失败</text>
+      <text wx:else>待机</text>
+    </view>
+
+    <!-- Connected Actions -->
+    <view class="action-group" wx:if="{{signalStatus === 'connected'}}">
+      <button class="btn-primary" bindtap="handleEndSignaling">断开连接</button>
+    </view>
+
+    <!-- Retry -->
+    <view class="action-group" wx:if="{{signalStatus === 'failed'}}">
+      <button class="btn-primary" bindtap="handleRetrySignaling">重试</button>
+      <button class="btn-secondary" bindtap="handleRescan">重新扫描</button>
+    </view>
+
+    <!-- Connecting spinner -->
+    <view class="spinner-row" wx:if="{{signalStatus === 'connecting'}}">
+      <view class="spinner"></view>
     </view>
   </view>
 
-  <!-- Toast -->
+  <!-- ========== Success ========== -->
+  <view class="state-panel success-mode" wx:if="{{mode === 'success'}}">
+    <view class="icon-wrap">
+      <text class="icon">🎉</text>
+    </view>
+    <text class="title">绑定成功！</text>
+    <text class="subtitle" wx:if="{{deviceInfo}}">设备 "{{deviceInfo.name}}" 已绑定</text>
+    <text class="subtitle">正在返回...</text>
+  </view>
+
+  <!-- ========== Error ========== -->
+  <view class="state-panel error-mode" wx:if="{{mode === 'error'}}">
+    <view class="icon-wrap">
+      <text class="icon">⚠️</text>
+    </view>
+    <text class="title">操作失败</text>
+    <text class="subtitle">{{error || '未知错误'}}</text>
+    <button class="btn-primary" bindtap="handleRescan">重新扫描</button>
+  </view>
+
+  <!-- ========== Toast ========== -->
   <view class="toast" wx:if="{{toastVisible}}">
     <text>{{toastText}}</text>
   </view>
+
 </view>

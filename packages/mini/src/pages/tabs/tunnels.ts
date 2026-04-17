@@ -2,6 +2,8 @@ import { tunnelStore } from '../../stores/tunnel';
 import { deviceApi } from '../../api/device';
 import { tunnelApi } from '../../api/tunnel';
 
+const POLL_INTERVAL_MS = 30 * 1000; // 30s
+
 Page({
   data: {
     tunnels: [] as any[],
@@ -13,14 +15,56 @@ Page({
     refreshing: false,
     toastText: '',
     toastVisible: false,
+    onlineCount: 0,
+    offlineCount: 0,
   },
+
+  _pollTimer: number | null = null,
 
   onLoad() {
     this.loadData();
+    this.startPolling();
   },
 
   onShow() {
     this.loadData();
+  },
+
+  onHide() {
+    this.stopPolling();
+  },
+
+  onUnload() {
+    this.stopPolling();
+  },
+
+  startPolling() {
+    if (this._pollTimer !== null) return;
+    this._pollTimer = setTimeout(() => {
+      this.pollStatus();
+    }, POLL_INTERVAL_MS) as unknown as number;
+  },
+
+  stopPolling() {
+    if (this._pollTimer !== null) {
+      clearTimeout(this._pollTimer);
+      this._pollTimer = null;
+    }
+  },
+
+  async pollStatus() {
+    // Silent refresh without loading indicator
+    try {
+      const response = await tunnelApi.list({ status: 'all' });
+      tunnelStore.fetchTunnels({ status: 'all' });
+      this.setData({ tunnels: response.tunnels });
+      this.applyFilter();
+      this.updateCounts(response.tunnels);
+    } catch {
+      // Silently fail polling
+    } finally {
+      this.startPolling();
+    }
   },
 
   onPullDownRefresh() {
@@ -40,12 +84,25 @@ Page({
           this.setData({ clientNames: map });
         }),
       ]);
+      const tunnels = tunnelStore.tunnels;
+      this.setData({ tunnels });
       this.applyFilter();
+      this.updateCounts(tunnels);
     } catch {
       wx.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       this.setData({ loading: false });
     }
+  },
+
+  updateCounts(tunnels: any[]) {
+    let online = 0, offline = 0;
+    tunnels.forEach((t) => {
+      const status = t.enabled === false ? 'offline' : t.status;
+      if (status === 'online') online++;
+      else offline++;
+    });
+    this.setData({ onlineCount: online, offlineCount: offline });
   },
 
   applyFilter() {

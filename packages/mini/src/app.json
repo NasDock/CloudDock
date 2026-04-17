@@ -8,7 +8,12 @@
     "pages/auth/register",
     "pages/tunnel/create",
     "pages/tunnel/detail",
-    "pages/device/scan"
+    "pages/device/scan",
+    "pages/device/signal",
+    "pages/settings/index",
+    "pages/settings/notifications",
+    "pages/settings/security",
+    "pages/settings/about"
   ],
   "window": {
     "navigationBarBackgroundColor": "#6366F1",

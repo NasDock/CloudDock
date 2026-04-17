@@ -1,0 +1,63 @@
+<view class="container">
+  <!-- Logo & Name -->
+  <view class="header-section">
+    <view class="logo-wrapper">
+      <view class="logo">
+        <text class="logo-text">CD</text>
+      </view>
+    </view>
+    <text class="app-name">CloudDock</text>
+    <text class="app-slogan">安全、稳定、高效的内网穿透解决方案</text>
+    <button class="btn-check-update" bindtap="checkForUpdate" size="mini">
+      检查更新
+    </button>
+  </view>
+
+  <!-- Info Card -->
+  <view class="card">
+    <view class="info-row">
+      <text class="info-label">版本号</text>
+      <text class="info-value">v{{version}}</text>
+    </view>
+    <view class="divider"></view>
+    <view class="info-row">
+      <text class="info-label">构建日期</text>
+      <text class="info-value">{{buildDate}}</text>
+    </view>
+  </view>
+
+  <!-- Links -->
+  <view class="section-title-bar">
+    <text class="section-title">法律信息</text>
+  </view>
+  <view class="card">
+    <view class="list-item" bindtap="showTerms">
+      <view class="list-item-left">
+        <text class="list-item-icon">📄</text>
+        <text class="list-item-title">使用条款</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+    <view class="divider"></view>
+    <view class="list-item" bindtap="showPrivacy">
+      <view class="list-item-left">
+        <text class="list-item-icon">🛡️</text>
+        <text class="list-item-title">隐私政策</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+    <view class="divider"></view>
+    <view class="list-item" bindtap="showLicenses">
+      <view class="list-item-left">
+        <text class="list-item-icon">📜</text>
+        <text class="list-item-title">开源许可</text>
+      </view>
+      <text class="list-item-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- Footer -->
+  <view class="footer">
+    <text class="footer-text">© 2024 CloudDock. All rights reserved.</text>
+  </view>
+</view>
