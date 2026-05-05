@@ -26,3 +26,10 @@ export interface TunnelStatistics {
   bytesIn: number;
   bytesOut: number;
 }
+
+export interface UserTrafficStatistics {
+  bytesIn: number;
+  bytesOut: number;
+  quota: number;
+  quotaUsed: number;
+}

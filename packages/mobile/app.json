@@ -21,7 +21,8 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow CloudDock to use the microphone for real-time connections.",
         "NSCameraUsageDescription": "Allow CloudDock to use the camera for real-time connections."
-      }
+      },
+      "appleTeamId": "88J3KT7DXX"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +34,9 @@
         "CAMERA",
         "NOTIFICATIONS",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [

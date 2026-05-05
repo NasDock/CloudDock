@@ -101,8 +101,7 @@ export default function DeviceListScreen() {
       subtitle={item.enabled === false ? '已下线' : item.status === 'online' ? '在线' : '离线'}
       status={item.enabled === false ? 'offline' : item.status}
       right={<IconButton icon="pencil" size={18} onPress={() => openRename(item)} />}
-      onPress={() => {}}
-      onLongPress={() => handleUnbind(item)}
+      onPress={() => handleUnbind(item)}
     >
       <View style={styles.infoRow}>
         <Text style={styles.label}>设备ID</Text>
@@ -336,6 +335,7 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingBottom: 140,
+    minHeight: '100%',
   },
   tabWrap: {
     paddingHorizontal: 16,

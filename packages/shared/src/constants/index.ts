@@ -21,6 +21,12 @@ export const TUNNEL_LIMITS = {
   enterprise: Infinity,
 } as const;
 
+export const TRAFFIC_QUOTA = {
+  free: 10 * 1024 * 1024 * 1024, // 10GB
+  pro: 100 * 1024 * 1024 * 1024, // 100GB
+  enterprise: Infinity,
+} as const;
+
 export const RATE_LIMIT = {
   requestsPerWindow: 100,
   windowMs: 60_000, // 1 minute
