@@ -19,6 +19,7 @@ import tunnelRoute from './modules/tunnel/tunnel.route.js';
 import clientRoute from './modules/client/client.route.js';
 import logRoute from './modules/log/log.route.js';
 import requestDeviceRoute from './modules/request-device/request-device.route.js';
+import trafficRoute from './modules/traffic/traffic.route.js';
 
 // Extend FastifyInstance
 declare module 'fastify' {
@@ -72,6 +73,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(tunnelRoute, { prefix: '/api/tunnels' });
   await fastify.register(clientRoute, { prefix: '/api/clients' });
   await fastify.register(requestDeviceRoute, { prefix: '/api/request-devices' });
+  await fastify.register(trafficRoute, { prefix: '/api/traffic' });
   await fastify.register(logRoute, { prefix: '/api' });
 
   // Tunnel routing handler - catches requests like /{username}/{tunnelName}/*

@@ -17,23 +17,26 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nattunnel.app",
+      "bundleIdentifier": "com.clouddock.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow CloudDock to use the microphone for real-time connections.",
         "NSCameraUsageDescription": "Allow CloudDock to use the camera for real-time connections."
-      }
+      },
+      "appleTeamId": "88J3KT7DXX"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.nattunnel.app",
+      "package": "com.clouddock.app",
       "permissions": [
         "CAMERA",
         "NOTIFICATIONS",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [

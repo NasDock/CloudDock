@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { deviceApi } from '../../api/device'
 import { requestDeviceApi } from '../../api/request-device'
 import { tunnelApi } from '../../api/tunnel'
+import { trafficApi } from '../../api/traffic'
 import { Header } from '../../components/layout/Header'
 import { TunnelCard } from '../../components/tunnel/TunnelCard'
 import { Card } from '../../components/ui/Card'
@@ -14,7 +15,9 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useAuth } from '../../hooks/useAuth'
 import { usePushNotification } from '../../hooks/usePushNotification'
 import { useTunnel } from '../../hooks/useTunnel'
+import { formatBytes } from '../../utils/formatters'
 import type { RequestDevice } from '../../api/request-device'
+import type { UserTrafficStatistics } from '@cloud-dock/shared'
 
 export default function DashboardScreen() {
   const router = useRouter()
@@ -27,6 +30,7 @@ export default function DashboardScreen() {
   const [logoutError, setLogoutError] = useState<string | null>(null)
   const [clientNames, setClientNames] = useState<Record<string, string>>({})
   const [pendingDevices, setPendingDevices] = useState<RequestDevice[]>([])
+  const [trafficStats, setTrafficStats] = useState<UserTrafficStatistics | null>(null)
 
   useEffect(() => {
     deviceApi
@@ -45,6 +49,11 @@ export default function DashboardScreen() {
       .then((res) => {
         setPendingDevices(res.devices.filter((d) => d.status === 'pending'))
       })
+      .catch(() => {})
+
+    trafficApi
+      .getStats()
+      .then((res) => setTrafficStats(res))
       .catch(() => {})
   }, [])
 
@@ -76,7 +85,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Header
         title="CloudDock"
-        subtitle={auth.user?.username}
+        subtitle={auth.user?.username || ''}
         right={
           <View style={styles.headerRight}>
             <StatusBadge
@@ -95,16 +104,14 @@ export default function DashboardScreen() {
         <Card style={styles.statsCard}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{tunnels.length}</Text>
-              <Text style={styles.statLabel}>全部隧道</Text>
+              <Text style={styles.statNumber}>{onlineTunnels.length}/{tunnels.length}</Text>
+              <Text style={styles.statLabel}>隧道统计</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#10B981' }]}>{onlineTunnels.length}</Text>
-              <Text style={styles.statLabel}>在线</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#6B7280' }]}>{offlineTunnels.length}</Text>
-              <Text style={styles.statLabel}>离线</Text>
+              <Text style={[styles.statNumber, { color: '#10B981' }]}>
+                {trafficStats ? `${formatBytes(trafficStats.quotaUsed)}/${formatBytes(trafficStats.quota)}` : '-'}
+              </Text>
+              <Text style={styles.statLabel}>流量统计</Text>
             </View>
           </View>
         </Card>
@@ -217,6 +224,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minHeight: '100%',
   },
   statsCard: {},
   statsRow: {

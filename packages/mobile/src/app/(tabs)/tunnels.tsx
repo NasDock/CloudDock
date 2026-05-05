@@ -168,6 +168,7 @@ export default function TunnelListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minHeight: '100%',
     backgroundColor: '#F9FAFB',
   },
   filterContainer: {

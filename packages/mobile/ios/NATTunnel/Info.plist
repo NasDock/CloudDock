@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>nat-tunnel</string>
-          <string>com.nattunnel.app</string>
+          <string>com.clouddock.app</string>
         </array>
       </dict>
     </array>
@@ -48,7 +48,7 @@
     <key>NSCameraUsageDescription</key>
     <string>Allow CloudDock to access your camera for scanning QR codes.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>Allow CloudDock to use the microphone for real-time connections.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
