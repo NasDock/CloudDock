@@ -1,11 +1,16 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
+import { upsertRequestDeviceForUser } from '../../middleware/request-device.middleware.js';
 
 const requestDeviceRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // List request devices
   fastify.get('/', { preHandler: [authenticate] }, async (request) => {
     const userId = (request.user as any).userId || (request.user as any).sub;
+
+    // Upsert the requesting device so mobile/mini clients register themselves
+    await upsertRequestDeviceForUser(userId, request);
+
     const [devices, user] = await Promise.all([
       prisma.requestDevice.findMany({
         where: { userId },
