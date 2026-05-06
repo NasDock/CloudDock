@@ -16,14 +16,21 @@ export const JWT_EXPIRES_IN = '24h';
 export const REFRESH_TOKEN_EXPIRES_IN_DAYS = 30;
 
 export const TUNNEL_LIMITS = {
-  free: 3,
-  pro: 20,
+  free: Infinity,
+  pro: Infinity,
   enterprise: Infinity,
 } as const;
 
 export const TRAFFIC_QUOTA = {
-  free: 10 * 1024 * 1024 * 1024, // 10GB
-  pro: 100 * 1024 * 1024 * 1024, // 100GB
+  free: Infinity,
+  pro: Infinity,
+  enterprise: Infinity,
+} as const;
+
+// 转发速率限制 (bps)
+export const RELAY_SPEED_LIMIT = {
+  free: 3 * 1024 * 1024, // 3 Mbps
+  pro: 12 * 1024 * 1024, // 12 Mbps
   enterprise: Infinity,
 } as const;
 

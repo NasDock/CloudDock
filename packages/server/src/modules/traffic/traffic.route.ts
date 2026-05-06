@@ -7,8 +7,19 @@ const trafficRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   fastify.addHook('preHandler', authenticate);
 
+  // Relay traffic stats
   fastify.get('/stats', {
     handler: controller.getStats.bind(controller),
+  });
+
+  // Report direct (P2P) traffic
+  fastify.post('/direct', {
+    handler: controller.reportDirect.bind(controller),
+  });
+
+  // Query direct (P2P) traffic stats
+  fastify.get('/direct/stats', {
+    handler: controller.getDirectStats.bind(controller),
   });
 };
 

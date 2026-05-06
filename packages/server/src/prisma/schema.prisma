@@ -23,6 +23,7 @@ model User {
   clients       Client[]
   refreshTokens RefreshToken[]
   requestDevices RequestDevice[]
+  directTrafficLogs DirectTrafficLog[]
 
   @@map("users")
 }
@@ -129,4 +130,19 @@ model RequestDevice {
   @@index([userId])
   @@index([status])
   @@map("request_devices")
+}
+
+// DirectTrafficLog = P2P traffic reported by clients (NAS/mobile)
+model DirectTrafficLog {
+  logId      String   @id @default(cuid()) @map("log_id")
+  userId     String   @map("user_id")
+  deviceId   String   @map("device_id")
+  direction  String   // "in" | "out"
+  bytes      Int      @default(0)
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+  @@map("direct_traffic_logs")
 }

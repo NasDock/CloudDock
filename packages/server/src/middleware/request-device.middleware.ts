@@ -15,13 +15,40 @@ function deriveDeviceId(request: FastifyRequest): string {
   return `rd_${hash}`;
 }
 
+function parseUserAgent(ua: string): { name: string | null; platform: string | null } {
+  if (!ua) return { name: null, platform: null };
+
+  let platform: string | null = null;
+  if (/iPhone|iPad|iPod/i.test(ua)) platform = 'iOS';
+  else if (/Android/i.test(ua)) platform = 'Android';
+  else if (/Windows NT/i.test(ua)) platform = 'Windows';
+  else if (/Mac OS X/i.test(ua)) platform = 'macOS';
+  else if (/Linux/i.test(ua)) platform = 'Linux';
+
+  let name: string | null = null;
+  if (/MicroMessenger/i.test(ua)) name = '微信';
+  else if (/DingTalk/i.test(ua)) name = '钉钉';
+  else if (/EdgiOS|EdgA/i.test(ua)) name = `Edge (${platform || '未知'})`;
+  else if (/Chrome/i.test(ua) && !/Edg|OPR/i.test(ua)) name = `Chrome (${platform || '未知'})`;
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) name = `Safari (${platform || '未知'})`;
+  else if (/Firefox/i.test(ua)) name = `Firefox (${platform || '未知'})`;
+  else if (platform) name = platform;
+
+  return { name, platform };
+}
+
 export async function upsertRequestDeviceForUser(userId: string, request: FastifyRequest) {
   const headerDeviceId = request.headers[HEADER_DEVICE_ID] as string | undefined;
   const deviceId = (headerDeviceId && headerDeviceId.trim()) || deriveDeviceId(request);
-  const name = (request.headers[HEADER_DEVICE_NAME] as string | undefined)?.trim() || null;
-  const platform = (request.headers[HEADER_DEVICE_PLATFORM] as string | undefined)?.trim() || null;
+  const headerName = (request.headers[HEADER_DEVICE_NAME] as string | undefined)?.trim() || null;
+  const headerPlatform = (request.headers[HEADER_DEVICE_PLATFORM] as string | undefined)?.trim() || null;
   const userAgent = request.headers['user-agent']?.toString() || null;
   const lastIp = request.ip || null;
+
+  // Fallback: derive name/platform from User-Agent when headers are absent
+  const uaParsed = userAgent ? parseUserAgent(userAgent) : { name: null, platform: null };
+  const name = headerName || uaParsed.name;
+  const platform = headerPlatform || uaParsed.platform;
 
   let device = await prisma.requestDevice.findUnique({
     where: { userId_deviceId: { userId, deviceId } },

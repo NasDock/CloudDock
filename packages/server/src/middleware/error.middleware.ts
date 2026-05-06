@@ -53,7 +53,7 @@ export function errorHandler(
     success: false,
     error: {
       code: errorCode,
-      message: statusCode >= 500 ? 'Internal server error' : error.message,
+      message: error.message || 'Internal server error',
     },
   });
 }
