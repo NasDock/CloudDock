@@ -31,8 +31,11 @@ export default function DashboardScreen() {
   const [clientNames, setClientNames] = useState<Record<string, string>>({})
   const [pendingDevices, setPendingDevices] = useState<RequestDevice[]>([])
   const [trafficStats, setTrafficStats] = useState<UserTrafficStatistics | null>(null)
+  const [clientCount, setClientCount] = useState(0)
 
   useEffect(() => {
+    if (!auth.isAuthenticated) return
+
     deviceApi
       .list()
       .then((res) => {
@@ -41,6 +44,7 @@ export default function DashboardScreen() {
           map[c.clientId] = c.name || '默认设备'
         })
         setClientNames(map)
+        setClientCount(res.clients.length)
       })
       .catch(() => {})
 
@@ -55,7 +59,7 @@ export default function DashboardScreen() {
       .getStats()
       .then((res) => setTrafficStats(res))
       .catch(() => {})
-  }, [])
+  }, [auth.isAuthenticated])
 
   // Redirect if not logged in
   if (!auth.isAuthenticated && !auth.isLoading) {
@@ -68,6 +72,10 @@ export default function DashboardScreen() {
     try {
       const res = await requestDeviceApi.list()
       setPendingDevices(res.devices.filter((d) => d.status === 'pending'))
+    } catch {}
+    try {
+      const res = await trafficApi.getStats()
+      setTrafficStats(res)
     } catch {}
     setRefreshing(false)
   }
@@ -104,14 +112,32 @@ export default function DashboardScreen() {
         <Card style={styles.statsCard}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{onlineTunnels.length}/{tunnels.length}</Text>
+              <View style={styles.statNumberRow}>
+                <Text style={[styles.statNumber, { color: '#10B981' }]}>{onlineTunnels.length}</Text>
+                <Text style={styles.statNumberSub}>/{tunnels.length}</Text>
+              </View>
               <Text style={styles.statLabel}>隧道统计</Text>
             </View>
+            <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#10B981' }]}>
-                {trafficStats ? `${formatBytes(trafficStats.quotaUsed)}/${formatBytes(trafficStats.quota)}` : '-'}
-              </Text>
-              <Text style={styles.statLabel}>流量统计</Text>
+              {trafficStats ? (
+                <View style={styles.statNumberRow}>
+                  <Text style={[styles.statNumber, { color: '#10B981' }]}>
+                    {formatBytes(trafficStats.quotaUsed, 1).split(' ')[0]}
+                  </Text>
+                  <Text style={styles.statNumberSub}>
+                    {' '}{formatBytes(trafficStats.quotaUsed, 1).split(' ')[1]}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.statNumber}>-</Text>
+              )}
+              <Text style={styles.statLabel}>已转发流量</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#10B981' }]}>{clientCount}</Text>
+              <Text style={styles.statLabel}>设备统计</Text>
             </View>
           </View>
         </Card>
@@ -236,10 +262,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  statNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
   statNumber: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  statNumberSub: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E5E7EB',
+    alignSelf: 'center',
   },
   statLabel: {
     fontSize: 12,

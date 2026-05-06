@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { TRAFFIC_QUOTA } from '@cloud-dock/shared';
-import type { UserTrafficStatistics } from '@cloud-dock/shared';
+import type { UserTrafficStatistics, DirectTrafficReport, DirectTrafficStats } from '@cloud-dock/shared';
 
 export class TrafficService {
   constructor(private fastify: FastifyInstance) {}
@@ -37,6 +37,46 @@ export class TrafficService {
       bytesOut,
       quota,
       quotaUsed,
+    };
+  }
+
+  async reportDirectTraffic(userId: string, reports: DirectTrafficReport[]): Promise<void> {
+    if (!reports.length) return;
+
+    await prisma.directTrafficLog.createMany({
+      data: reports.map((r) => ({
+        userId,
+        deviceId: r.deviceId,
+        direction: r.direction,
+        bytes: r.bytes,
+        timestamp: r.timestamp ? new Date(r.timestamp) : new Date(),
+      })),
+    });
+  }
+
+  async getDirectTrafficStats(userId: string): Promise<DirectTrafficStats> {
+    const stats = await prisma.directTrafficLog.aggregate({
+      where: { userId },
+      _sum: { bytes: true },
+    });
+
+    const inStats = await prisma.directTrafficLog.aggregate({
+      where: { userId, direction: 'in' },
+      _sum: { bytes: true },
+    });
+
+    const outStats = await prisma.directTrafficLog.aggregate({
+      where: { userId, direction: 'out' },
+      _sum: { bytes: true },
+    });
+
+    const bytesIn = Number(inStats._sum.bytes || 0);
+    const bytesOut = Number(outStats._sum.bytes || 0);
+
+    return {
+      bytesIn,
+      bytesOut,
+      total: bytesIn + bytesOut,
     };
   }
 }

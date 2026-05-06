@@ -33,3 +33,17 @@ export interface UserTrafficStatistics {
   quota: number;
   quotaUsed: number;
 }
+
+// Direct (P2P) traffic types
+export interface DirectTrafficReport {
+  deviceId: string;
+  direction: 'in' | 'out';
+  bytes: number;
+  timestamp?: string; // ISO string, defaults to server time
+}
+
+export interface DirectTrafficStats {
+  bytesIn: number;
+  bytesOut: number;
+  total: number;
+}
