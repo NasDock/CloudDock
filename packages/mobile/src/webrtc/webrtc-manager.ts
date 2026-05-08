@@ -12,7 +12,7 @@ import {
   RTCSessionDescription,
   RTCIceCandidate,
 } from 'react-native-webrtc';
-import { fromByteArray } from 'base64-js';
+import { fromByteArray, toByteArray } from 'base64-js';
 
 export interface WebRTCManagerOptions {
   serverUrl: string;
@@ -28,8 +28,13 @@ export class WebRTCManager {
   private deviceId: string;
   private readonly chunkSize = 32 * 1024;
   private incomingFiles = new Map<string, { meta: WebRTCFileMeta; chunks: string[] }>();
-  private connectTimer?: ReturnType<typeof setTimeout>;
+  private connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private readonly connectTimeoutMs = 15000;
+
+  // VPN packet callbacks
+  onIPPacketReceived?: (packet: ArrayBuffer) => void;
+  onVPNControlReceived?: (msg: any) => void;
+  onConnectionStateChange?: (state: 'connected' | 'failed' | 'disconnected' | 'closed') => void;
 
   constructor(options: WebRTCManagerOptions) {
     this.signalClient = new SignalClient(options);
@@ -55,6 +60,21 @@ export class WebRTCManager {
       return true;
     } catch (err) {
       console.warn('[webrtc] dataChannel send failed', err);
+      return false;
+    }
+  }
+
+  async sendIPPacket(_data: ArrayBuffer): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      const msg: any = {
+        type: 'ip_packet',
+        data: fromByteArray(new Uint8Array(_data)),
+      };
+      this.dataChannel.send(JSON.stringify(msg));
+      return true;
+    } catch (err) {
+      console.warn('[webrtc] ip packet send failed', err);
       return false;
     }
   }
@@ -141,7 +161,7 @@ export class WebRTCManager {
   private ensurePeerConnection(): void {
     if (this.pc) return;
     this.pc = new RTCPeerConnection({ iceServers: [] });
-    this.pc.onicecandidate = (event) => {
+    (this.pc as any).addEventListener('icecandidate', (event: any) => {
       if (event.candidate) {
         this.signalClient.send({
           type: 'ice',
@@ -154,17 +174,25 @@ export class WebRTCManager {
           },
         });
       }
-    };
-    this.pc.onconnectionstatechange = () => {
+    });
+    (this.pc as any).addEventListener('connectionstatechange', () => {
       const state = this.pc?.connectionState;
       if (state === 'connected') {
         this.ready = true;
         this.clearConnectTimer();
         console.info('[webrtc] connected (mobile)');
-      } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+        this.onConnectionStateChange?.('connected');
+      } else if (state === 'failed') {
         this.ready = false;
+        this.onConnectionStateChange?.('failed');
+      } else if (state === 'disconnected') {
+        this.ready = false;
+        this.onConnectionStateChange?.('disconnected');
+      } else if (state === 'closed') {
+        this.ready = false;
+        this.onConnectionStateChange?.('closed');
       }
-    };
+    });
     this.dataChannel = this.pc.createDataChannel('data');
     this.dataChannel.onopen = () => {
       this.ready = true;
@@ -179,15 +207,33 @@ export class WebRTCManager {
       if (!text) return;
       try {
         const msg = JSON.parse(text) as WebRTCDataMessage;
-        if (msg.type === 'file_chunk') {
-          const entry = this.incomingFiles.get(msg.meta.transferId) || { meta: msg.meta, chunks: [] };
-          entry.chunks[msg.index] = msg.data;
-          this.incomingFiles.set(msg.meta.transferId, entry);
-        } else if (msg.type === 'file_complete') {
-          const entry = this.incomingFiles.get(msg.meta.transferId);
-          if (entry) {
-            console.info('[webrtc] file received', { transferId: msg.meta.transferId });
-            this.incomingFiles.delete(msg.meta.transferId);
+        switch (msg.type) {
+          case 'file_chunk': {
+            const entry = this.incomingFiles.get(msg.meta.transferId) || { meta: msg.meta, chunks: [] };
+            entry.chunks[msg.index] = msg.data;
+            this.incomingFiles.set(msg.meta.transferId, entry);
+            break;
+          }
+          case 'file_complete': {
+            const entry = this.incomingFiles.get(msg.meta.transferId);
+            if (entry) {
+              console.info('[webrtc] file received', { transferId: msg.meta.transferId });
+              this.incomingFiles.delete(msg.meta.transferId);
+            }
+            break;
+          }
+          case 'ip_packet': {
+            try {
+              const packet = toByteArray(msg.data);
+              this.onIPPacketReceived?.(packet.buffer.slice(packet.byteOffset, packet.byteOffset + packet.byteLength) as ArrayBuffer);
+            } catch {
+              // ignore invalid ip packet
+            }
+            break;
+          }
+          case 'vpn_control': {
+            this.onVPNControlReceived?.(msg);
+            break;
           }
         }
       } catch {}
@@ -197,7 +243,7 @@ export class WebRTCManager {
   private async startAsCaller(): Promise<void> {
     this.ensurePeerConnection();
     if (!this.pc) return;
-    const offer = await this.pc.createOffer();
+    const offer = await (this.pc as any).createOffer();
     await this.pc.setLocalDescription(offer);
     this.signalClient.send({
       type: 'offer',

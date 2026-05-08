@@ -11,14 +11,45 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		489AABE1F4576AC66E3D5103 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A066024CAD8518CC2C1E99F /* NetworkExtension.framework */; };
+		8F266A57F24D039EFD9BE47B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 949B5A7101CC896B4F6BB469 /* Foundation.framework */; };
+		954E11DB19154BBE5F6F120D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1B7687EA9CC0432073EB1ABA /* Info.plist */; };
 		95D1535E14CA85B755DAB679 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6D54F0F8CE07B243CD412C76 /* PrivacyInfo.xcprivacy */; };
 		96905EF65AED1B983A6B3ABC /* libPods-NATTunnel.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-NATTunnel.a */; };
+		A8EC564F31D260ACB39E6B68 /* PacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B78A942C6AEC2A1B14F9A24 /* PacketTunnelProvider.swift */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		C07C424F6BED57B44BBFD0AE /* VPNExtension in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */; };
 		E2424DC70A4E431BA0EFFFDC /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29C4A171321481DA8E786B8 /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E25963B763A575575E0A6163 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2348917583671E4B9E2127D1;
+			remoteInfo = VPNExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AC9317C05A7177D17C38390D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C07C424F6BED57B44BBFD0AE /* VPNExtension in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		03501A4FC467839BDB234A81 /* VPNExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = VPNExtension.entitlements; path = VPNExtension/VPNExtension.entitlements; sourceTree = "<group>"; };
+		0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */ = {isa = PBXFileReference; includeInIndex = 0; path = VPNExtension; sourceTree = BUILT_PRODUCTS_DIR; };
 		0F8C8490FDBD4F3E8853D0A2 /* NATTunnel-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "NATTunnel-Bridging-Header.h"; path = "NATTunnel/NATTunnel-Bridging-Header.h"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* NATTunnel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NATTunnel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = NATTunnel/AppDelegate.h; sourceTree = "<group>"; };
@@ -26,10 +57,14 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NATTunnel/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NATTunnel/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = NATTunnel/main.m; sourceTree = "<group>"; };
+		1B7687EA9CC0432073EB1ABA /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = VPNExtension/Info.plist; sourceTree = "<group>"; };
+		1B78A942C6AEC2A1B14F9A24 /* PacketTunnelProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PacketTunnelProvider.swift; path = VPNExtension/PacketTunnelProvider.swift; sourceTree = "<group>"; };
 		58EEBF8E8E6FB1BC6CAF49B5 /* libPods-NATTunnel.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-NATTunnel.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A066024CAD8518CC2C1E99F /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = NetworkExtension.framework; sourceTree = SDKROOT; };
 		6C2E3173556A471DD304B334 /* Pods-NATTunnel.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NATTunnel.debug.xcconfig"; path = "Target Support Files/Pods-NATTunnel/Pods-NATTunnel.debug.xcconfig"; sourceTree = "<group>"; };
 		6D54F0F8CE07B243CD412C76 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = NATTunnel/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7A4D352CD337FB3A3BF06240 /* Pods-NATTunnel.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NATTunnel.release.xcconfig"; path = "Target Support Files/Pods-NATTunnel/Pods-NATTunnel.release.xcconfig"; sourceTree = "<group>"; };
+		949B5A7101CC896B4F6BB469 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		A29C4A171321481DA8E786B8 /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "NATTunnel/noop-file.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = NATTunnel/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -43,6 +78,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				96905EF65AED1B983A6B3ABC /* libPods-NATTunnel.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A009EF68F74BB7258EA185EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8F266A57F24D039EFD9BE47B /* Foundation.framework in Frameworks */,
+				489AABE1F4576AC66E3D5103 /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,8 +115,20 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				58EEBF8E8E6FB1BC6CAF49B5 /* libPods-NATTunnel.a */,
+				929AA3E6D91EA4BC3AD9A9E3 /* iOS */,
+				5A066024CAD8518CC2C1E99F /* NetworkExtension.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		34EA0E958F3203F1DEA89640 /* VPNExtension */ = {
+			isa = PBXGroup;
+			children = (
+				1B78A942C6AEC2A1B14F9A24 /* PacketTunnelProvider.swift */,
+				1B7687EA9CC0432073EB1ABA /* Info.plist */,
+				03501A4FC467839BDB234A81 /* VPNExtension.entitlements */,
+			);
+			name = VPNExtension;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -91,6 +147,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
 				D7E4C46ADA2E9064B798F356 /* ExpoModulesProviders */,
+				34EA0E958F3203F1DEA89640 /* VPNExtension */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -101,8 +158,17 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* NATTunnel.app */,
+				0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		929AA3E6D91EA4BC3AD9A9E3 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				949B5A7101CC896B4F6BB469 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		92DBD88DE9BF7D494EA9DA96 /* NATTunnel */ = {
@@ -154,15 +220,33 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				7F94255DF63C557FD40A8EDD /* [CP] Embed Pods Frameworks */,
+				AC9317C05A7177D17C38390D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C6E886A1B45BC58E4F24C969 /* PBXTargetDependency */,
 			);
 			name = NATTunnel;
 			productName = NATTunnel;
 			productReference = 13B07F961A680F5B00A75B9A /* NATTunnel.app */;
 			productType = "com.apple.product-type.application";
+		};
+		2348917583671E4B9E2127D1 /* VPNExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E06E83F94A1F14638EAC1D93 /* Build configuration list for PBXNativeTarget "VPNExtension" */;
+			buildPhases = (
+				12F8310876A58F342943B2F0 /* Sources */,
+				A009EF68F74BB7258EA185EE /* Frameworks */,
+				AC0ED174ED41E9019C0722C2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VPNExtension;
+			productName = VPNExtension;
+			productReference = 0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */;
 		};
 /* End PBXNativeTarget section */
 
@@ -173,8 +257,8 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = 88J3KT7DXX;
 						LastSwiftMigration = 1250;
-						DevelopmentTeam = "88J3KT7DXX";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -193,6 +277,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* NATTunnel */,
+				2348917583671E4B9E2127D1 /* VPNExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -206,6 +291,14 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				95D1535E14CA85B755DAB679 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0ED174ED41E9019C0722C2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				954E11DB19154BBE5F6F120D /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,6 +422,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		12F8310876A58F342943B2F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A8EC564F31D260ACB39E6B68 /* PacketTunnelProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -342,6 +443,15 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C6E886A1B45BC58E4F24C969 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = VPNExtension;
+			target = 2348917583671E4B9E2127D1 /* VPNExtension */;
+			targetProxy = E25963B763A575575E0A6163 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -350,7 +460,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NATTunnel/NATTunnel.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 88J3KT7DXX;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -373,9 +486,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "88J3KT7DXX";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
@@ -386,7 +496,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = NATTunnel/NATTunnel.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 88J3KT7DXX;
 				INFOPLIST_FILE = NATTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -403,9 +516,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = "88J3KT7DXX";
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};
@@ -527,6 +637,51 @@
 			};
 			name = Release;
 		};
+		DB8EEE7AEC591519C03451BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = VPNExtension/VPNExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 88J3KT7DXX;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = VPNExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.clouddock.app.VPNExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F0DB4B584A122ACF80606B89 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = VPNExtension/VPNExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 88J3KT7DXX;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = VPNExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.clouddock.app.VPNExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -544,6 +699,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E06E83F94A1F14638EAC1D93 /* Build configuration list for PBXNativeTarget "VPNExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB8EEE7AEC591519C03451BC /* Release */,
+				F0DB4B584A122ACF80606B89 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

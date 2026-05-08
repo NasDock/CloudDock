@@ -8,8 +8,8 @@ const SIGNAL_WS_PATH = '/ws/signal';
 type Role = 'nas' | 'mobile';
 
 type SignalConnection = {
-  nas?: WebSocket;
-  mobile?: WebSocket;
+  nas?: WebSocket | undefined;
+  mobile?: WebSocket | undefined;
   userId: string;
   deviceId: string;
 };

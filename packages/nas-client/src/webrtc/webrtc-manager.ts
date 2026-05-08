@@ -27,6 +27,10 @@ export class WebRTCManager {
   private connectTimer?: ReturnType<typeof setTimeout>;
   private readonly connectTimeoutMs = 15000;
 
+  // VPN packet callbacks
+  onIPPacketReceived?: (packet: Buffer) => void;
+  onVPNControlReceived?: (msg: any) => void;
+
   constructor(options: WebRTCManagerOptions) {
     this.signalClient = new SignalClient(options);
     this.deviceId = options.deviceId;
@@ -52,6 +56,21 @@ export class WebRTCManager {
       return true;
     } catch (err) {
       logger.warn('WebRTC dataChannel send failed', { err });
+      return false;
+    }
+  }
+
+  async sendIPPacket(data: Buffer): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      const msg: any = {
+        type: 'ip_packet',
+        data: data.toString('base64'),
+      };
+      this.dataChannel.send(JSON.stringify(msg));
+      return true;
+    } catch (err) {
+      logger.warn('WebRTC ip packet send failed', { err });
       return false;
     }
   }
@@ -175,6 +194,15 @@ export class WebRTCManager {
           const msg = JSON.parse(data) as WebRTCDataMessage;
           if (msg.type === 'file_complete') {
             logger.info('WebRTC file received (NAS)', { transferId: msg.meta.transferId });
+          } else if (msg.type === 'ip_packet') {
+            try {
+              const packet = Buffer.from(msg.data, 'base64');
+              this.onIPPacketReceived?.(packet);
+            } catch {
+              // ignore invalid ip packet
+            }
+          } else if (msg.type === 'vpn_control') {
+            this.onVPNControlReceived?.(msg);
           }
         } catch {
           // ignore

@@ -47,6 +47,14 @@ export class WSMessageHandler {
         await this.tunnelManager.handleTunnelResponse(sessionId, message.data);
         break;
 
+      case 'tunnel_binary':
+        await this.handleTunnelBinary(sessionId, message);
+        break;
+
+      case 'tunnel_binary_response':
+        await this.tunnelManager.handleTunnelBinaryResponse(sessionId, message.data);
+        break;
+
       default:
         this.fastify.log.warn({ type: message.type }, 'Unknown message type');
     }
@@ -76,6 +84,15 @@ export class WSMessageHandler {
       path: message.data.path,
       headers: message.data.headers,
       body: message.data.body,
+      timestamp: message.data.timestamp,
+    });
+  }
+
+  private handleTunnelBinary(sessionId: string, message: WSClientMessage): void {
+    this.tunnelManager.handleTunnelBinary(sessionId, {
+      tunnelId: message.data.tunnelId,
+      requestId: message.data.requestId,
+      data: message.data.data,
       timestamp: message.data.timestamp,
     });
   }

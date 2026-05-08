@@ -72,6 +72,21 @@ export class TunnelManager {
     }
   }
 
+  async handleTunnelBinary(sessionId: string, data: { tunnelId: string; requestId: string; data: string; timestamp: number }): Promise<void> {
+    const conn = connectionPool.getConnection(sessionId);
+    if (!conn) return;
+
+    if (conn.ws.readyState === WebSocket.OPEN) {
+      conn.ws.send(
+        JSON.stringify({
+          type: 'tunnel_binary',
+          id: `bin_${Date.now()}`,
+          data,
+        })
+      );
+    }
+  }
+
   async handleTunnelResponse(sessionId: string, data: {
     requestId: string;
     statusCode: number;
@@ -89,6 +104,66 @@ export class TunnelManager {
       headers: data.headers,
       body: Buffer.from(data.body, 'base64'),
     });
+  }
+
+  async forwardBinary(
+    tunnelId: string,
+    data: Buffer,
+    timeoutMs = 30000
+  ): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
+      const tunnel = await prisma.tunnel.findUnique({
+        where: { tunnelId },
+      });
+
+      if (!tunnel) {
+        reject(new Error('Tunnel not found'));
+        return;
+      }
+
+      const conn = connectionPool.getConnectionByTunnel(tunnelId);
+      if (!conn || !conn.isAlive) {
+        reject(new Error('Tunnel not online'));
+        return;
+      }
+
+      const requestId = `bin_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+      const timer = setTimeout(() => {
+        this.pendingBinaryRequests.delete(requestId);
+        reject(new Error('Binary request timeout'));
+      }, timeoutMs);
+
+      this.pendingBinaryRequests.set(requestId, { resolve, reject, timer });
+
+      if (conn.ws.readyState === WebSocket.OPEN) {
+        conn.ws.send(
+          JSON.stringify({
+            type: 'tunnel_binary',
+            id: requestId,
+            data: {
+              tunnelId,
+              requestId,
+              data: data.toString('base64'),
+              timestamp: Date.now(),
+            },
+          })
+        );
+      }
+    });
+  }
+
+  async handleTunnelBinaryResponse(sessionId: string, data: {
+    requestId: string;
+    data: string;
+  }): Promise<void> {
+    const pending = this.pendingBinaryRequests.get(data.requestId);
+    if (!pending) return;
+
+    clearTimeout(pending.timer);
+    this.pendingBinaryRequests.delete(data.requestId);
+
+    pending.resolve(Buffer.from(data.data, 'base64'));
   }
 
   async forwardRequest(
@@ -149,4 +224,6 @@ export class TunnelManager {
       }
     });
   }
+
+  private pendingBinaryRequests = new Map<string, { resolve: Function; reject: Function; timer: NodeJS.Timeout }>();
 }
