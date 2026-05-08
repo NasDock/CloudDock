@@ -49,7 +49,7 @@
 
 /* Begin PBXFileReference section */
 		03501A4FC467839BDB234A81 /* VPNExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = VPNExtension.entitlements; path = VPNExtension/VPNExtension.entitlements; sourceTree = "<group>"; };
-		0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */ = {isa = PBXFileReference; includeInIndex = 0; path = VPNExtension; sourceTree = BUILT_PRODUCTS_DIR; };
+		0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = VPNExtension; sourceTree = BUILT_PRODUCTS_DIR; };
 		0F8C8490FDBD4F3E8853D0A2 /* NATTunnel-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "NATTunnel-Bridging-Header.h"; path = "NATTunnel/NATTunnel-Bridging-Header.h"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* NATTunnel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NATTunnel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = NATTunnel/AppDelegate.h; sourceTree = "<group>"; };
@@ -247,6 +247,7 @@
 			name = VPNExtension;
 			productName = VPNExtension;
 			productReference = 0ACCFBB3C6E2CDF28BE6D874 /* VPNExtension */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -257,8 +258,12 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = 88J3KT7DXX;
+						DevelopmentTeam = "88J3KT7DXX";
 						LastSwiftMigration = 1250;
+						ProvisioningStyle = Automatic;
+					};
+					2348917583671E4B9E2127D1 = {
+						DevelopmentTeam = "88J3KT7DXX";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -463,7 +468,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 88J3KT7DXX;
+				DEVELOPMENT_TEAM = "88J3KT7DXX";
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -499,7 +504,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 88J3KT7DXX;
+				DEVELOPMENT_TEAM = "88J3KT7DXX";
 				INFOPLIST_FILE = NATTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
