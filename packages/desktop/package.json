@@ -1,0 +1,72 @@
+{
+  "name": "@cloud-dock/desktop",
+  "version": "1.0.0",
+  "description": "CloudDock Desktop Client",
+  "main": "./dist/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "postinstall": "electron-rebuild",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cloud-dock/shared": "workspace:*",
+    "@cloud-dock/web": "workspace:*",
+    "axios": "^1.7.0",
+    "electron-store": "^10.0.0",
+    "koffi": "^2.16.2",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^6.26.0",
+    "utun": "2.0.0",
+    "wrtc": "^0.4.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/ws": "^8.5.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-rebuild": "^3.2.0",
+    "electron-vite": "^3.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  },
+  "build": {
+    "appId": "com.clouddock.desktop",
+    "productName": "CloudDock",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  }
+}
