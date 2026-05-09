@@ -1,18 +1,6 @@
-import type {
-  WebRTCSignalMessage,
-  WebRTCOfferPayload,
-  WebRTCAnswerPayload,
-  WebRTCIcePayload,
-  WebRTCDataMessage,
-  WebRTCFileMeta,
-} from '@cloud-dock/shared';
 import { SignalClient } from './signal-client';
-import {
-  RTCPeerConnection,
-  RTCSessionDescription,
-  RTCIceCandidate,
-} from 'react-native-webrtc';
-import { fromByteArray, toByteArray } from 'base64-js';
+import wrtc from 'wrtc';
+const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc as any;
 
 export interface WebRTCManagerOptions {
   serverUrl: string;
@@ -23,16 +11,13 @@ export interface WebRTCManagerOptions {
 export class WebRTCManager {
   private signalClient: SignalClient;
   private ready = false;
-  private pc: RTCPeerConnection | null = null;
+  private pc: any | null = null;
   private dataChannel: any | null = null;
   private deviceId: string;
-  private readonly chunkSize = 32 * 1024;
-  private incomingFiles = new Map<string, { meta: WebRTCFileMeta; chunks: string[] }>();
-  private connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  private connectTimer?: ReturnType<typeof setTimeout> | undefined;
   private readonly connectTimeoutMs = 15000;
 
-  // VPN packet callbacks
-  onIPPacketReceived?: (packet: ArrayBuffer) => void;
+  onIPPacketReceived?: (packet: Buffer) => void;
   onVPNControlReceived?: (msg: any) => void;
   onConnectionStateChange?: (state: 'connected' | 'failed' | 'disconnected' | 'closed') => void;
 
@@ -44,8 +29,7 @@ export class WebRTCManager {
 
   start(): void {
     this.signalClient.connect();
-    // WebRTC init happens on first offer/answer; keep lazy for now.
-    console.info('[webrtc] manager started (mobile)');
+    console.info('[webrtc] manager started (desktop)');
     this.startConnectTimer();
   }
 
@@ -53,10 +37,10 @@ export class WebRTCManager {
     return this.ready;
   }
 
-  async sendLargePayload(_data: ArrayBuffer): Promise<boolean> {
+  async sendLargePayload(data: Buffer): Promise<boolean> {
     if (!this.ready || !this.dataChannel) return false;
     try {
-      this.dataChannel.send(_data);
+      this.dataChannel.send(data);
       return true;
     } catch (err) {
       console.warn('[webrtc] dataChannel send failed', err);
@@ -64,12 +48,12 @@ export class WebRTCManager {
     }
   }
 
-  async sendIPPacket(_data: ArrayBuffer): Promise<boolean> {
+  async sendIPPacket(data: Buffer): Promise<boolean> {
     if (!this.ready || !this.dataChannel) return false;
     try {
       const msg: any = {
         type: 'ip_packet',
-        data: fromByteArray(new Uint8Array(_data)),
+        data: data.toString('base64'),
       };
       this.dataChannel.send(JSON.stringify(msg));
       return true;
@@ -79,38 +63,10 @@ export class WebRTCManager {
     }
   }
 
-  async sendFile(_data: ArrayBuffer, _meta: Omit<WebRTCFileMeta, 'size' | 'chunkSize' | 'chunkCount'>): Promise<boolean> {
-    if (!this.ready || !this.dataChannel) return false;
-    const bytes = new Uint8Array(_data);
-    const size = bytes.length;
-    const chunkSize = this.chunkSize;
-    const chunkCount = Math.ceil(size / chunkSize);
-    const fullMeta: WebRTCFileMeta = { ..._meta, size, chunkSize, chunkCount };
-    try {
-      for (let i = 0; i < chunkCount; i++) {
-        const start = i * chunkSize;
-        const end = Math.min(start + chunkSize, size);
-        const chunk = bytes.subarray(start, end);
-        const msg: WebRTCDataMessage = {
-          type: 'file_chunk',
-          meta: fullMeta,
-          index: i,
-          data: fromByteArray(chunk),
-        };
-        this.dataChannel.send(JSON.stringify(msg));
-      }
-      this.dataChannel.send(JSON.stringify({ type: 'file_complete', meta: fullMeta } as WebRTCDataMessage));
-      return true;
-    } catch (err) {
-      console.warn('[webrtc] file send failed', err);
-      return false;
-    }
-  }
-
-  private handleSignal(msg: WebRTCSignalMessage): void {
+  private handleSignal(msg: any): void {
     switch (msg.type) {
       case 'offer': {
-        const payload = msg.data as WebRTCOfferPayload;
+        const payload = msg.data;
         this.ensurePeerConnection();
         if (!this.pc) return;
         this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: payload.sdp })).then(async () => {
@@ -127,7 +83,7 @@ export class WebRTCManager {
         break;
       }
       case 'answer': {
-        const payload = msg.data as WebRTCAnswerPayload;
+        const payload = msg.data;
         this.ensurePeerConnection();
         if (!this.pc) return;
         this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: payload.sdp }));
@@ -135,7 +91,7 @@ export class WebRTCManager {
         break;
       }
       case 'ice': {
-        const payload = msg.data as WebRTCIcePayload;
+        const payload = msg.data;
         this.ensurePeerConnection();
         if (!this.pc) return;
         if (payload.candidate) {
@@ -149,7 +105,6 @@ export class WebRTCManager {
         break;
       }
       case 'signal_ready': {
-        // Mobile acts as caller by default: create offer
         this.startAsCaller();
         break;
       }
@@ -161,7 +116,8 @@ export class WebRTCManager {
   private ensurePeerConnection(): void {
     if (this.pc) return;
     this.pc = new RTCPeerConnection({ iceServers: [] });
-    (this.pc as any).addEventListener('icecandidate', (event: any) => {
+
+    this.pc.onicecandidate = (event: any) => {
       if (event.candidate) {
         this.signalClient.send({
           type: 'ice',
@@ -174,13 +130,14 @@ export class WebRTCManager {
           },
         });
       }
-    });
-    (this.pc as any).addEventListener('connectionstatechange', () => {
+    };
+
+    this.pc.onconnectionstatechange = () => {
       const state = this.pc?.connectionState;
       if (state === 'connected') {
         this.ready = true;
         this.clearConnectTimer();
-        console.info('[webrtc] connected (mobile)');
+        console.info('[webrtc] connected (desktop)');
         this.onConnectionStateChange?.('connected');
       } else if (state === 'failed') {
         this.ready = false;
@@ -192,12 +149,13 @@ export class WebRTCManager {
         this.ready = false;
         this.onConnectionStateChange?.('closed');
       }
-    });
+    };
+
     this.dataChannel = this.pc.createDataChannel('data');
     this.dataChannel.onopen = () => {
       this.ready = true;
       this.clearConnectTimer();
-      console.info('[webrtc] data channel open (mobile)');
+      console.info('[webrtc] data channel open (desktop)');
     };
     this.dataChannel.onclose = () => {
       this.ready = false;
@@ -206,26 +164,12 @@ export class WebRTCManager {
       const text = String(evt.data || '');
       if (!text) return;
       try {
-        const msg = JSON.parse(text) as WebRTCDataMessage;
+        const msg = JSON.parse(text);
         switch (msg.type) {
-          case 'file_chunk': {
-            const entry = this.incomingFiles.get(msg.meta.transferId) || { meta: msg.meta, chunks: [] };
-            entry.chunks[msg.index] = msg.data;
-            this.incomingFiles.set(msg.meta.transferId, entry);
-            break;
-          }
-          case 'file_complete': {
-            const entry = this.incomingFiles.get(msg.meta.transferId);
-            if (entry) {
-              console.info('[webrtc] file received', { transferId: msg.meta.transferId });
-              this.incomingFiles.delete(msg.meta.transferId);
-            }
-            break;
-          }
           case 'ip_packet': {
             try {
-              const packet = toByteArray(msg.data);
-              this.onIPPacketReceived?.(packet.buffer.slice(packet.byteOffset, packet.byteOffset + packet.byteLength) as ArrayBuffer);
+              const packet = Buffer.from(msg.data, 'base64');
+              this.onIPPacketReceived?.(packet);
             } catch {
               // ignore invalid ip packet
             }
@@ -243,7 +187,7 @@ export class WebRTCManager {
   private async startAsCaller(): Promise<void> {
     this.ensurePeerConnection();
     if (!this.pc) return;
-    const offer = await (this.pc as any).createOffer();
+    const offer = await this.pc.createOffer();
     await this.pc.setLocalDescription(offer);
     this.signalClient.send({
       type: 'offer',

@@ -1,6 +1,6 @@
 // WebRTC data channel payloads for large data transfer
 
-export type WebRTCDataType = 'file_chunk' | 'file_complete' | 'file_error';
+export type WebRTCDataType = 'file_chunk' | 'file_complete' | 'file_error' | 'ip_packet' | 'vpn_control';
 
 export interface WebRTCFileMeta {
   transferId: string;
@@ -30,5 +30,21 @@ export interface WebRTCFileError {
   message: string;
 }
 
-export type WebRTCDataMessage = WebRTCFileChunk | WebRTCFileComplete | WebRTCFileError;
+// VPN IP packet over WebRTC data channel
+export interface WebRTCIPPacket {
+  type: 'ip_packet';
+  // base64-encoded raw IP packet
+  data: string;
+}
+
+// VPN control messages (ip assignment, route updates, etc.)
+export type VPNControlAction = 'ip_assigned' | 'route_update' | 'heartbeat' | 'mtu_negotiate';
+
+export interface WebRTCVPNControl {
+  type: 'vpn_control';
+  action: VPNControlAction;
+  payload?: unknown;
+}
+
+export type WebRTCDataMessage = WebRTCFileChunk | WebRTCFileComplete | WebRTCFileError | WebRTCIPPacket | WebRTCVPNControl;
 

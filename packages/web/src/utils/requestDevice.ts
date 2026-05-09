@@ -17,8 +17,8 @@ export function getRequestDeviceId(): string {
 
 export function getRequestDeviceHeaders(): Record<string, string> {
   const deviceId = getRequestDeviceId();
-  const platform = navigator.platform || 'web';
-  const name = `Web - ${platform}`;
+  const platform = localStorage.getItem('requestDevicePlatform') || navigator.platform || 'web';
+  const name = localStorage.getItem('requestDeviceName') || `Web - ${platform}`;
   return {
     'x-request-device-id': deviceId,
     'x-request-device-name': name,

@@ -49,6 +49,13 @@ export interface WSTunnelData {
   responseBody?: string;
 }
 
+export interface WSTunnelBinary {
+  tunnelId: string;
+  requestId: string;
+  data: string; // base64-encoded raw IP packet
+  timestamp: number;
+}
+
 export interface WSBindRequest {
   bindToken: string;
   userToken: string;

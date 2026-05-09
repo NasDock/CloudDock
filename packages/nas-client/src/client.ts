@@ -8,6 +8,7 @@ import { request as httpRequest } from 'http';
 import { request as httpsRequest } from 'https';
 import { URL } from 'url';
 import { WebRTCManager } from './webrtc/webrtc-manager.js';
+import { createVPNGateway, type VPNGateway } from './modules/vpn-gateway.js';
 
 export interface ClientStatus {
   connected: boolean;
@@ -41,6 +42,7 @@ export class NASClient extends EventEmitter {
   private clientKey?: string;
   private deviceId?: string;
   private webrtcManager?: WebRTCManager;
+  private vpnGateway?: VPNGateway;
   private pendingPairingResolve?: (key: string) => void;
   private pendingPairingReject?: (err: Error) => void;
 
@@ -166,6 +168,10 @@ export class NASClient extends EventEmitter {
           this.handleTunnelData(msg.data);
           break;
 
+        case 'tunnel_binary':
+          this.handleTunnelBinary(msg.data);
+          break;
+
         default:
           logger.debug('Unknown message type', { type: msg.type });
       }
@@ -202,8 +208,25 @@ export class NASClient extends EventEmitter {
     this.status.connected = true;
     this.status.reconnectAttempts = 0;
     this.deviceId = data.clientId;
+    this.startVPNGateway();
     this.startWebRTCSignal();
     this.emit('auth_success', data);
+  }
+
+  private startVPNGateway(): void {
+    try {
+      if (this.vpnGateway?.isRunning()) return;
+      this.vpnGateway = createVPNGateway({
+        tunAddress: '100.64.0.1',
+        subnetMask: '255.255.255.0',
+        mtu: 1280,
+        localSubnet: '192.168.0.0/16',
+      });
+      this.vpnGateway.start();
+      logger.info('VPN gateway started');
+    } catch (err: any) {
+      logger.warn('Failed to start VPN gateway', { error: err.message });
+    }
   }
 
   private startWebRTCSignal(): void {
@@ -214,9 +237,34 @@ export class NASClient extends EventEmitter {
       deviceId: this.deviceId,
       clientKey: this.clientKey,
     });
+
+    // Wire VPN gateway ↔ WebRTC data channel
+    this.webrtcManager.onIPPacketReceived = (packet) => {
+      this.vpnGateway?.sendPacket(packet);
+    };
+
     this.webrtcManager.start().catch((err) => {
       logger.warn('WebRTC manager failed to start, fallback to tunnel', { error: err?.message || err });
     });
+
+    // Start forwarding packets from VPN gateway to WebRTC or WebSocket fallback
+    if (this.vpnGateway) {
+      this.vpnGateway.onPacketReceived = (packet) => {
+        if (this.webrtcManager?.isReady()) {
+          this.webrtcManager.sendIPPacket(packet).catch(() => {});
+        } else {
+          // Fallback: send via WebSocket tunnel binary
+          this.send({
+            type: 'tunnel_binary_response',
+            id: `vpn_${Date.now()}`,
+            data: {
+              requestId: 'vpn_fallback',
+              data: packet.toString('base64'),
+            },
+          });
+        }
+      };
+    }
   }
 
   private handleTunnelsSync(tunnels: TunnelInfo[]): void {
@@ -237,6 +285,20 @@ export class NASClient extends EventEmitter {
       id: `open_${Date.now()}_${tunnelId}`,
       data: { tunnelId },
     });
+  }
+
+  private async handleTunnelBinary(data: {
+    tunnelId: string;
+    requestId: string;
+    data: string;
+    timestamp: number;
+  }): Promise<void> {
+    try {
+      const packet = Buffer.from(data.data, 'base64');
+      this.vpnGateway?.sendPacket(packet);
+    } catch (err: any) {
+      logger.warn('Failed to handle tunnel binary', { error: err.message });
+    }
   }
 
   private async handleTunnelData(data: {
@@ -399,6 +461,10 @@ export class NASClient extends EventEmitter {
       this.ws.close(1000, 'Client disconnect');
       this.ws = null;
     }
+    this.vpnGateway?.stop();
+    this.vpnGateway = undefined;
+    this.webrtcManager?.close();
+    this.webrtcManager = undefined;
   }
 
   getStatus(): ClientStatus {

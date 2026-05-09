@@ -17,15 +17,23 @@ export interface WebRTCManagerOptions {
   clientKey: string;
 }
 
+interface PeerState {
+  pc: any;
+  dataChannel: any | null;
+  ready: boolean;
+}
+
 export class WebRTCManager {
   private signalClient: SignalClient;
-  private ready = false;
-  private pc: any | null = null;
-  private dataChannel: any | null = null;
+  private peers = new Map<string, PeerState>();
   private deviceId: string;
   private readonly chunkSize = 32 * 1024;
   private connectTimer?: ReturnType<typeof setTimeout>;
   private readonly connectTimeoutMs = 15000;
+
+  // VPN packet callbacks
+  onIPPacketReceived?: (packet: Buffer) => void;
+  onVPNControlReceived?: (msg: any) => void;
 
   constructor(options: WebRTCManagerOptions) {
     this.signalClient = new SignalClient(options);
@@ -35,93 +43,129 @@ export class WebRTCManager {
 
   async start(): Promise<void> {
     this.signalClient.connect();
-    // WebRTC init happens on first offer/answer; we keep it lazy here.
     logger.info('WebRTC manager started (NAS)', { mode: 'lazy' });
     this.startConnectTimer();
   }
 
   isReady(): boolean {
-    return this.ready;
+    for (const peer of this.peers.values()) {
+      if (peer.ready) return true;
+    }
+    return false;
+  }
+
+  getReadyPeerCount(): number {
+    let count = 0;
+    for (const peer of this.peers.values()) {
+      if (peer.ready) count++;
+    }
+    return count;
   }
 
   // Placeholder for large data transfer. Returns false to indicate fallback.
   async sendLargePayload(_data: Buffer): Promise<boolean> {
-    if (!this.ready || !this.dataChannel) return false;
-    try {
-      this.dataChannel.send(_data);
-      return true;
-    } catch (err) {
-      logger.warn('WebRTC dataChannel send failed', { err });
-      return false;
+    let sent = false;
+    for (const peer of this.peers.values()) {
+      if (!peer.ready || !peer.dataChannel) continue;
+      try {
+        peer.dataChannel.send(_data);
+        sent = true;
+      } catch (err) {
+        logger.warn('WebRTC dataChannel send failed', { err });
+      }
     }
+    return sent;
+  }
+
+  async sendIPPacket(data: Buffer): Promise<boolean> {
+    let sent = false;
+    for (const peer of this.peers.values()) {
+      if (!peer.ready || !peer.dataChannel) continue;
+      try {
+        const msg: any = {
+          type: 'ip_packet',
+          data: data.toString('base64'),
+        };
+        peer.dataChannel.send(JSON.stringify(msg));
+        sent = true;
+      } catch (err) {
+        logger.warn('WebRTC ip packet send failed', { err });
+      }
+    }
+    return sent;
   }
 
   async sendFile(buffer: Buffer, meta: Omit<WebRTCFileMeta, 'size' | 'chunkSize' | 'chunkCount'>): Promise<boolean> {
-    if (!this.ready || !this.dataChannel) return false;
+    let sent = false;
     const size = buffer.length;
     const chunkSize = this.chunkSize;
     const chunkCount = Math.ceil(size / chunkSize);
     const fullMeta: WebRTCFileMeta = { ...meta, size, chunkSize, chunkCount };
-    try {
-      for (let i = 0; i < chunkCount; i++) {
-        const start = i * chunkSize;
-        const end = Math.min(start + chunkSize, size);
-        const chunk = buffer.subarray(start, end);
-        const msg: WebRTCDataMessage = {
-          type: 'file_chunk',
-          meta: fullMeta,
-          index: i,
-          data: chunk.toString('base64'),
-        };
-        this.dataChannel.send(JSON.stringify(msg));
+
+    for (const peer of this.peers.values()) {
+      if (!peer.ready || !peer.dataChannel) continue;
+      try {
+        for (let i = 0; i < chunkCount; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(start + chunkSize, size);
+          const chunk = buffer.subarray(start, end);
+          const msg: WebRTCDataMessage = {
+            type: 'file_chunk',
+            meta: fullMeta,
+            index: i,
+            data: chunk.toString('base64'),
+          };
+          peer.dataChannel.send(JSON.stringify(msg));
+        }
+        peer.dataChannel.send(JSON.stringify({ type: 'file_complete', meta: fullMeta } as WebRTCDataMessage));
+        sent = true;
+      } catch (err) {
+        logger.warn('WebRTC file send failed', { err });
       }
-      this.dataChannel.send(JSON.stringify({ type: 'file_complete', meta: fullMeta } as WebRTCDataMessage));
-      return true;
-    } catch (err) {
-      logger.warn('WebRTC file send failed', { err });
-      return false;
     }
+    return sent;
   }
 
   private async handleSignal(msg: WebRTCSignalMessage): Promise<void> {
+    const peerId = (msg as any).from || 'unknown';
+
     switch (msg.type) {
       case 'offer': {
         const payload = msg.data as WebRTCOfferPayload;
-        await this.ensurePeerConnection();
-        if (!this.pc) return;
-        await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: payload.sdp }));
-        const answer = await this.pc.createAnswer();
-        await this.pc.setLocalDescription(answer);
+        const peer = await this.ensurePeerConnection(peerId);
+        if (!peer) return;
+        await peer.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: payload.sdp }));
+        const answer = await peer.pc.createAnswer();
+        await peer.pc.setLocalDescription(answer);
         this.signalClient.send({
           type: 'answer',
           id: `ans_${Date.now()}`,
           deviceId: msg.deviceId,
           data: { sdp: answer.sdp },
         });
-        logger.info('Received WebRTC offer', { deviceId: msg.deviceId });
+        logger.info('Received WebRTC offer', { deviceId: msg.deviceId, peerId });
         break;
       }
       case 'answer': {
         const payload = msg.data as WebRTCAnswerPayload;
-        await this.ensurePeerConnection();
-        if (!this.pc) return;
-        await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: payload.sdp }));
-        logger.info('Received WebRTC answer', { deviceId: msg.deviceId });
+        const peer = this.peers.get(peerId);
+        if (!peer) return;
+        await peer.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: payload.sdp }));
+        logger.info('Received WebRTC answer', { deviceId: msg.deviceId, peerId });
         break;
       }
       case 'ice': {
         const payload = msg.data as WebRTCIcePayload;
-        await this.ensurePeerConnection();
-        if (!this.pc) return;
+        const peer = this.peers.get(peerId);
+        if (!peer) return;
         if (payload.candidate) {
-          await this.pc.addIceCandidate(new RTCIceCandidate(payload));
+          await peer.pc.addIceCandidate(new RTCIceCandidate(payload));
         }
         break;
       }
       case 'bye': {
-        this.ready = false;
-        this.closePeerConnection();
-        logger.info('WebRTC session closed', { deviceId: msg.deviceId });
+        this.closePeerConnection(peerId);
+        logger.info('WebRTC session closed', { deviceId: msg.deviceId, peerId });
         break;
       }
       default:
@@ -129,12 +173,18 @@ export class WebRTCManager {
     }
   }
 
-  private async ensurePeerConnection(): Promise<void> {
-    if (this.pc) return;
-    this.pc = new RTCPeerConnection({
+  private async ensurePeerConnection(peerId: string): Promise<PeerState | undefined> {
+    const existing = this.peers.get(peerId);
+    if (existing) return existing;
+
+    const pc = new RTCPeerConnection({
       iceServers: [],
     });
-    this.pc.onicecandidate = (event: any) => {
+
+    const peer: PeerState = { pc, dataChannel: null, ready: false };
+    this.peers.set(peerId, peer);
+
+    pc.onicecandidate = (event: any) => {
       if (event.candidate) {
         this.signalClient.send({
           type: 'ice',
@@ -148,51 +198,80 @@ export class WebRTCManager {
         });
       }
     };
-    this.pc.onconnectionstatechange = () => {
-      const state = this.pc?.connectionState;
+
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
       if (state === 'connected') {
-        this.ready = true;
+        peer.ready = true;
         this.clearConnectTimer();
-        logger.info('WebRTC connected (NAS)');
+        logger.info('WebRTC connected (NAS)', { peerId });
       } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-        this.ready = false;
+        peer.ready = false;
+        if (state === 'failed' || state === 'closed') {
+          this.peers.delete(peerId);
+        }
       }
     };
-    this.pc.ondatachannel = (event: any) => {
-      this.dataChannel = event.channel;
-      this.dataChannel.onopen = () => {
-        this.ready = true;
+
+    pc.ondatachannel = (event: any) => {
+      peer.dataChannel = event.channel;
+      peer.dataChannel.onopen = () => {
+        peer.ready = true;
         this.clearConnectTimer();
-        logger.info('WebRTC data channel open (NAS)');
+        logger.info('WebRTC data channel open (NAS)', { peerId });
       };
-      this.dataChannel.onclose = () => {
-        this.ready = false;
+      peer.dataChannel.onclose = () => {
+        peer.ready = false;
       };
-      this.dataChannel.onmessage = (evt: any) => {
+      peer.dataChannel.onmessage = (evt: any) => {
         const data = String(evt.data || '');
         if (!data) return;
         try {
           const msg = JSON.parse(data) as WebRTCDataMessage;
           if (msg.type === 'file_complete') {
             logger.info('WebRTC file received (NAS)', { transferId: msg.meta.transferId });
+          } else if (msg.type === 'ip_packet') {
+            try {
+              const packet = Buffer.from(msg.data, 'base64');
+              this.onIPPacketReceived?.(packet);
+            } catch {
+              // ignore invalid ip packet
+            }
+          } else if (msg.type === 'vpn_control') {
+            this.onVPNControlReceived?.(msg);
           }
         } catch {
           // ignore
         }
       };
     };
+
+    return peer;
   }
 
-  private closePeerConnection(): void {
-    this.clearConnectTimer();
-    try {
-      this.dataChannel?.close();
-    } catch {}
-    this.dataChannel = null;
-    try {
-      this.pc?.close();
-    } catch {}
-    this.pc = null;
+  private closePeerConnection(peerId?: string): void {
+    if (peerId) {
+      const peer = this.peers.get(peerId);
+      if (peer) {
+        try {
+          peer.dataChannel?.close();
+        } catch {}
+        try {
+          peer.pc?.close();
+        } catch {}
+        this.peers.delete(peerId);
+      }
+    } else {
+      for (const [id, peer] of this.peers) {
+        try {
+          peer.dataChannel?.close();
+        } catch {}
+        try {
+          peer.pc?.close();
+        } catch {}
+      }
+      this.peers.clear();
+    }
   }
 
   close(): void {
@@ -203,7 +282,7 @@ export class WebRTCManager {
   private startConnectTimer(): void {
     if (this.connectTimer) return;
     this.connectTimer = setTimeout(() => {
-      if (!this.ready) {
+      if (!this.isReady()) {
         logger.warn('WebRTC connection timeout, fallback to tunnel');
         this.closePeerConnection();
       }

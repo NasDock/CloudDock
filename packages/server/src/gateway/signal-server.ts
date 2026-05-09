@@ -5,11 +5,12 @@ import { prisma } from '../plugins/database.plugin.js';
 
 const SIGNAL_WS_PATH = '/ws/signal';
 
-type Role = 'nas' | 'mobile';
+type Role = 'nas' | 'mobile' | 'desktop';
 
 type SignalConnection = {
-  nas?: WebSocket;
-  mobile?: WebSocket;
+  nas?: WebSocket | undefined;
+  mobile?: WebSocket | undefined;
+  desktop?: WebSocket | undefined;
   userId: string;
   deviceId: string;
 };
@@ -17,7 +18,7 @@ type SignalConnection = {
 const connections = new Map<string, SignalConnection>(); // deviceId -> conn
 
 function getRoleFromParams(roleParam: string | null, clientKey: string | null, token: string | null): Role | null {
-  if (roleParam === 'nas' || roleParam === 'mobile') return roleParam;
+  if (roleParam === 'nas' || roleParam === 'mobile' || roleParam === 'desktop') return roleParam;
   if (clientKey) return 'nas';
   if (token) return 'mobile';
   return null;
@@ -89,8 +90,9 @@ export class SignalServer {
         }
         userId = client.userId;
       } else {
+        // mobile and desktop both use JWT token auth
         if (!token) {
-          ws.close(1008, 'token required for mobile');
+          ws.close(1008, `token required for ${role}`);
           return;
         }
         const decoded = this.fastify.jwt.verify(token) as { userId?: string; sub?: string };
@@ -116,8 +118,10 @@ export class SignalServer {
       const conn = connections.get(deviceId) || { userId, deviceId };
       if (role === 'nas') {
         conn.nas = ws;
-      } else {
+      } else if (role === 'mobile') {
         conn.mobile = ws;
+      } else {
+        conn.desktop = ws;
       }
       connections.set(deviceId, conn);
 
@@ -144,7 +148,8 @@ export class SignalServer {
         if (!existing) return;
         if (role === 'nas' && existing.nas === ws) existing.nas = undefined;
         if (role === 'mobile' && existing.mobile === ws) existing.mobile = undefined;
-        if (!existing.nas && !existing.mobile) {
+        if (role === 'desktop' && existing.desktop === ws) existing.desktop = undefined;
+        if (!existing.nas && !existing.mobile && !existing.desktop) {
           connections.delete(deviceId);
         }
       });
@@ -157,14 +162,22 @@ export class SignalServer {
   private forwardMessage(deviceId: string, from: Role, message: any): void {
     const conn = connections.get(deviceId);
     if (!conn) return;
-    const target = from === 'nas' ? conn.mobile : conn.nas;
-    if (!target || target.readyState !== WebSocket.OPEN) {
-      return;
+
+    const targets: WebSocket[] = [];
+    if (conn.nas && conn.nas.readyState === WebSocket.OPEN && from !== 'nas') {
+      targets.push(conn.nas);
     }
-    target.send(JSON.stringify({
-      ...message,
-      from,
-    }));
+    if (conn.mobile && conn.mobile.readyState === WebSocket.OPEN && from !== 'mobile') {
+      targets.push(conn.mobile);
+    }
+    if (conn.desktop && conn.desktop.readyState === WebSocket.OPEN && from !== 'desktop') {
+      targets.push(conn.desktop);
+    }
+
+    const payload = JSON.stringify({ ...message, from });
+    for (const target of targets) {
+      target.send(payload);
+    }
   }
 }
 

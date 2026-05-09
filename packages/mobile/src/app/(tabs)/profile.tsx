@@ -8,11 +8,13 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { LoadingOverlay } from '../../components/ui/LoadingOverlay';
 import { useAuth } from '../../hooks/useAuth';
+import { useVPN } from '../../hooks/useVPN';
 import { userApi } from '../../api/user';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { auth, logout, checkAuth } = useAuth();
+  const { status, virtualIp, nasVirtualIp, stats, error: vpnError, toggleVPN, isConnected } = useVPN();
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -108,6 +110,47 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.email}>{auth.user?.email}</Text>
             </View>
+          </View>
+        </Card>
+
+        {/* VPN Control */}
+        <Card title="异地组网">
+          <View style={styles.vpnSection}>
+            <View style={styles.vpnRow}>
+              <View>
+                <Text style={styles.vpnStatusLabel}>
+                  {isConnected ? '已连接' : status === 'connecting' ? '连接中...' : '未连接'}
+                </Text>
+                {isConnected && (
+                  <Text style={styles.vpnIpText}>
+                    本机: {virtualIp} / NAS: {nasVirtualIp}
+                  </Text>
+                )}
+              </View>
+              <List.Icon
+                icon={isConnected ? 'lan-connect' : 'lan-disconnect'}
+                color={isConnected ? '#10B981' : status === 'failed' ? '#EF4444' : '#9CA3AF'}
+              />
+            </View>
+            {isConnected && (
+              <View style={styles.vpnStatsRow}>
+                <Text style={styles.vpnStatsText}>
+                  入: {(stats.bytesIn / 1024).toFixed(1)} KB / 出: {(stats.bytesOut / 1024).toFixed(1)} KB
+                </Text>
+              </View>
+            )}
+            <Button
+              onPress={toggleVPN}
+              loading={status === 'connecting'}
+              disabled={status === 'connecting'}
+              variant={isConnected ? 'danger' : 'primary'}
+              style={styles.vpnButton}
+            >
+              {isConnected ? '断开组网' : '开启组网'}
+            </Button>
+            {vpnError && (
+              <Text style={styles.vpnErrorText}>{vpnError}</Text>
+            )}
           </View>
         </Card>
 
@@ -524,5 +567,40 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     marginTop: 4,
+  },
+  vpnSection: {
+    paddingVertical: 4,
+  },
+  vpnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  vpnStatusLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  vpnIpText: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  vpnStatsRow: {
+    marginBottom: 12,
+  },
+  vpnStatsText: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  vpnButton: {
+    marginTop: 4,
+  },
+  vpnErrorText: {
+    fontSize: 13,
+    color: '#EF4444',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
