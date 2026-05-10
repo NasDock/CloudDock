@@ -6,7 +6,5 @@
     "docker:server": "docker build -f docker/server.dockerfile -t clouddock-server:latest .",
     "docker:edge": "docker build -f docker/edge.dockerfile -t clouddock-edge:latest ."
   },
-  "pnpm": {
-    "onlyBuiltDependencies": ["bcrypt", "@prisma/client", "@prisma/engines", "esbuild", "prisma", "wrtc"]
-  }
+  "packageManager": "pnpm@10.28.1"
 }
