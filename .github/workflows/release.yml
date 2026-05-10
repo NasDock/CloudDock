@@ -79,16 +79,11 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Enable corepack
-        run: corepack enable
 
       - name: Configure pnpm store
         run: |
@@ -168,16 +163,11 @@ jobs:
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Enable corepack
-        run: corepack enable
 
       - name: Configure pnpm store
         run: |
@@ -197,6 +187,7 @@ jobs:
           set -x
           pnpm --filter @cloud-dock/server deploy /tmp/clouddock-server/server --prod --legacy
           cd /tmp/clouddock-server/server
+          node -e "const fs = require('node:fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); const rootPkg = JSON.parse(fs.readFileSync(process.env.GITHUB_WORKSPACE + '/package.json', 'utf8')); pkg.packageManager = rootPkg.packageManager; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');"
           pnpm dlx prisma@5.22.0 generate --schema=./src/prisma/schema.prisma
           cd /tmp
           rm -rf /tmp/clouddock-server-tar
