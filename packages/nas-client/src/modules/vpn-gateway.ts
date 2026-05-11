@@ -1,4 +1,4 @@
-import { Tun } from 'tuntap2';
+import type { Tun as TunType } from 'tuntap2';
 import { logger } from '../utils/logger.js';
 import { setupLinuxNetworking, teardownLinuxNetworking } from '../utils/network-setup.js';
 
@@ -10,7 +10,7 @@ export interface VPNGatewayConfig {
 }
 
 export interface VPNGateway {
-  start(): void;
+  start(): Promise<void>;
   stop(): void;
   sendPacket(packet: Buffer): void;
   onPacketReceived?: (packet: Buffer) => void;
@@ -18,11 +18,23 @@ export interface VPNGateway {
   getTunName(): string | undefined;
 }
 
+type TunConstructor = new () => TunType;
+
+async function loadTunConstructor(): Promise<TunConstructor> {
+  try {
+    const mod = await import('tuntap2');
+    return mod.Tun as TunConstructor;
+  } catch (err: any) {
+    throw new Error(
+      `tuntap2 native addon is unavailable: ${err?.message || String(err)}`
+    );
+  }
+}
+
 class VPNGatewayImpl implements VPNGateway {
-  private tun?: Tun;
+  private tun?: TunType;
   private config: VPNGatewayConfig;
   private running = false;
-  private packetHandler?: (packet: Buffer) => void;
 
   onPacketReceived?: (packet: Buffer) => void;
 
@@ -34,13 +46,14 @@ class VPNGatewayImpl implements VPNGateway {
     };
   }
 
-  start(): void {
+  async start(): Promise<void> {
     if (this.running) {
       logger.warn('VPN gateway already running');
       return;
     }
 
     try {
+      const Tun = await loadTunConstructor();
       this.tun = new Tun();
       this.tun.mtu = this.config.mtu!;
 
@@ -74,7 +87,7 @@ class VPNGatewayImpl implements VPNGateway {
   }
 
   stop(): void {
-    if (!this.running) return;
+    if (!this.running && !this.tun) return;
     this.running = false;
 
     if (this.tun) {
