@@ -1,5 +1,6 @@
 package com.clouddock.app.vpn
 
+import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
 import android.util.Base64
@@ -11,14 +12,55 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
 
     companion object {
         const val NAME = "CloudDockVPNBridge"
+        private const val VPN_PERMISSION_REQUEST_CODE = 4242
+    }
+
+    private var permissionPromise: Promise? = null
+
+    private val activityEventListener = object : BaseActivityEventListener() {
+        override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
+            if (requestCode != VPN_PERMISSION_REQUEST_CODE) return
+            val granted = resultCode == Activity.RESULT_OK
+            permissionPromise?.resolve(granted)
+            permissionPromise = null
+        }
     }
 
     override fun getName(): String = NAME
 
     init {
+        reactContext.addActivityEventListener(activityEventListener)
         CloudDockVpnService.onPacketReceived = { packet ->
             val base64 = Base64.encodeToString(packet, Base64.NO_WRAP)
             emitEvent("vpnPacketReceived", base64)
+        }
+    }
+
+    @ReactMethod
+    fun requestPermission(promise: Promise) {
+        val intent = VpnService.prepare(reactContext)
+        if (intent == null) {
+            promise.resolve(true)
+            return
+        }
+
+        val activity = currentActivity
+        if (activity == null) {
+            promise.reject("NO_ACTIVITY", "Current activity unavailable for VPN permission request", null)
+            return
+        }
+
+        if (permissionPromise != null) {
+            promise.reject("VPN_PERMISSION", "VPN permission request already in progress", null)
+            return
+        }
+
+        permissionPromise = promise
+        try {
+            activity.startActivityForResult(intent, VPN_PERMISSION_REQUEST_CODE)
+        } catch (e: Exception) {
+            permissionPromise = null
+            promise.reject("VPN_PERMISSION", e.message, e)
         }
     }
 
