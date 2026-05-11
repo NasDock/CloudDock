@@ -158,9 +158,7 @@ export class WebRTCManager {
         const payload = msg.data as WebRTCIcePayload;
         const peer = this.peers.get(peerId);
         if (!peer) return;
-        if (payload.candidate) {
-          await peer.pc.addIceCandidate(new RTCIceCandidate(payload));
-        }
+        await this.addIceCandidate(peer, payload, peerId);
         break;
       }
       case 'bye': {
@@ -171,6 +169,46 @@ export class WebRTCManager {
       default:
         break;
     }
+  }
+
+  private async addIceCandidate(peer: PeerState, payload: WebRTCIcePayload, peerId: string): Promise<void> {
+    const candidate = this.normalizeIceCandidate(payload);
+    if (!candidate) return;
+
+    try {
+      await peer.pc.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err: any) {
+      logger.warn('Ignoring invalid WebRTC ICE candidate', {
+        peerId,
+        error: err?.message || String(err),
+      });
+    }
+  }
+
+  private normalizeIceCandidate(payload: WebRTCIcePayload | undefined): WebRTCIcePayload | undefined {
+    if (!payload?.candidate || typeof payload.candidate !== 'string') return undefined;
+
+    const candidate: WebRTCIcePayload = {
+      candidate: payload.candidate,
+    };
+
+    if (typeof payload.sdpMid === 'string' && payload.sdpMid.length > 0) {
+      candidate.sdpMid = payload.sdpMid;
+    }
+
+    const rawMLineIndex = payload.sdpMLineIndex;
+    if (rawMLineIndex !== undefined && rawMLineIndex !== null) {
+      const mLineIndex = Number(rawMLineIndex);
+      if (Number.isInteger(mLineIndex) && mLineIndex >= 0 && mLineIndex <= 2147483647) {
+        candidate.sdpMLineIndex = mLineIndex;
+      }
+    }
+
+    if (candidate.sdpMid === undefined && candidate.sdpMLineIndex === undefined) {
+      candidate.sdpMLineIndex = 0;
+    }
+
+    return candidate;
   }
 
   private async ensurePeerConnection(peerId: string): Promise<PeerState | undefined> {
@@ -192,8 +230,8 @@ export class WebRTCManager {
           deviceId: this.deviceId,
           data: {
             candidate: event.candidate.candidate,
-            sdpMid: event.candidate.sdpMid || undefined,
-            sdpMLineIndex: event.candidate.sdpMLineIndex || undefined,
+            sdpMid: event.candidate.sdpMid ?? undefined,
+            sdpMLineIndex: event.candidate.sdpMLineIndex ?? undefined,
           },
         });
       }

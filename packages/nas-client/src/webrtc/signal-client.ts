@@ -2,7 +2,7 @@ import { WebSocket } from 'ws';
 import { logger } from '../utils/logger.js';
 import type { WebRTCSignalMessage } from '@cloud-dock/shared';
 
-type SignalHandler = (msg: WebRTCSignalMessage) => void;
+type SignalHandler = (msg: WebRTCSignalMessage) => void | Promise<void>;
 
 export interface SignalClientOptions {
   serverUrl: string; // base ws url, e.g. ws://host:3300/ws/device
@@ -34,7 +34,14 @@ export class SignalClient {
     this.ws.on('message', (data) => {
       try {
         const msg = JSON.parse(data.toString()) as WebRTCSignalMessage;
-        this.handlers.forEach((h) => h(msg));
+        this.handlers.forEach((h) => {
+          Promise.resolve(h(msg)).catch((err) => {
+            logger.warn('Signal message handler failed', {
+              type: msg.type,
+              error: err?.message || String(err),
+            });
+          });
+        });
       } catch (err) {
         logger.warn('Failed to parse signal message', { err });
       }
