@@ -3,6 +3,10 @@ FROM node:22-bookworm-slim AS base
 WORKDIR /app
 
 FROM base AS deps
+ENV npm_config_nodedir=/usr/local
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/nas-client/package.json ./packages/nas-client/
 COPY packages/web/package.json ./packages/web/
@@ -49,7 +53,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends nginx \
+  && apt-get install -y --no-install-recommends nginx iptables procps \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=app-builder /app/nas-client-deploy/node_modules ./node_modules

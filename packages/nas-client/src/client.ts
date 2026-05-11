@@ -7,8 +7,8 @@ import { TunnelManager } from './modules/tunnel-manager.js';
 import { request as httpRequest } from 'http';
 import { request as httpsRequest } from 'https';
 import { URL } from 'url';
-import { WebRTCManager } from './webrtc/webrtc-manager.js';
-import { createVPNGateway, type VPNGateway } from './modules/vpn-gateway.js';
+import type { WebRTCManager } from './webrtc/webrtc-manager.js';
+import type { VPNGateway } from './modules/vpn-gateway.js';
 
 export interface ClientStatus {
   connected: boolean;
@@ -208,31 +208,55 @@ export class NASClient extends EventEmitter {
     this.status.connected = true;
     this.status.reconnectAttempts = 0;
     this.deviceId = data.clientId;
-    this.startVPNGateway();
-    this.startWebRTCSignal();
+    void this.startNetworkServices();
     this.emit('auth_success', data);
   }
 
-  private startVPNGateway(): void {
+  private async startNetworkServices(): Promise<void> {
+    await this.startVPNGateway();
+    await this.startWebRTCSignal();
+  }
+
+  private async startVPNGateway(): Promise<void> {
+    if (this.vpnGateway?.isRunning()) return;
+    const vpnModule = await import('./modules/vpn-gateway.js').catch((err: any) => {
+      logger.warn('VPN gateway module unavailable; continuing with WebSocket tunnel forwarding only', {
+        error: err?.message || String(err),
+      });
+      return undefined;
+    });
+    if (!vpnModule) return;
+
     try {
-      if (this.vpnGateway?.isRunning()) return;
-      this.vpnGateway = createVPNGateway({
+      this.vpnGateway = vpnModule.createVPNGateway({
         tunAddress: '100.64.0.1',
         subnetMask: '255.255.255.0',
         mtu: 1280,
         localSubnet: '192.168.0.0/16',
       });
-      this.vpnGateway.start();
+      await this.vpnGateway.start();
       logger.info('VPN gateway started');
     } catch (err: any) {
-      logger.warn('Failed to start VPN gateway', { error: err.message });
+      this.vpnGateway = undefined;
+      logger.warn('VPN gateway unavailable; continuing with WebSocket tunnel forwarding only', {
+        error: err?.message || String(err),
+      });
     }
   }
 
-  private startWebRTCSignal(): void {
+  private async startWebRTCSignal(): Promise<void> {
     if (!this.deviceId || !this.clientKey) return;
     if (this.webrtcManager) return;
-    this.webrtcManager = new WebRTCManager({
+
+    const webrtcModule = await import('./webrtc/webrtc-manager.js').catch((err: any) => {
+      logger.warn('WebRTC manager unavailable, using WebSocket tunnel fallback', {
+        error: err?.message || String(err),
+      });
+      return undefined;
+    });
+    if (!webrtcModule) return;
+
+    this.webrtcManager = new webrtcModule.WebRTCManager({
       serverUrl: this.serverUrl,
       deviceId: this.deviceId,
       clientKey: this.clientKey,

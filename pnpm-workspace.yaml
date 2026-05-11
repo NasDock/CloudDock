@@ -7,4 +7,5 @@ onlyBuiltDependencies:
   - "bcrypt"
   - "esbuild"
   - "prisma"
+  - "tuntap2"
   - "wrtc"
