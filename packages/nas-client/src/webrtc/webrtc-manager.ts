@@ -129,7 +129,8 @@ export class WebRTCManager {
   private async handleSignal(msg: WebRTCSignalMessage): Promise<void> {
     const peerId = (msg as any).from || 'unknown';
 
-    switch (msg.type) {
+    try {
+      switch (msg.type) {
       case 'offer': {
         const payload = msg.data as WebRTCOfferPayload;
         const peer = await this.ensurePeerConnection(peerId);
@@ -168,6 +169,13 @@ export class WebRTCManager {
       }
       default:
         break;
+      }
+    } catch (err: any) {
+      logger.warn('Failed to handle WebRTC signal', {
+        peerId,
+        type: msg.type,
+        error: err?.message || String(err),
+      });
     }
   }
 

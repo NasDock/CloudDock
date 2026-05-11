@@ -24,6 +24,12 @@ export type VPNStatus = 'connected' | 'connecting' | 'disconnecting' | 'disconne
 /**
  * Start the VPN tunnel with the given configuration.
  */
+export async function requestVPNPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  if (!CloudDockVPNBridge.requestPermission) return true;
+  return CloudDockVPNBridge.requestPermission();
+}
+
 export async function startVPN(config: VPNConfig): Promise<{ success: boolean }> {
   return CloudDockVPNBridge.startVPN({
     subnetMask: '255.255.255.0',

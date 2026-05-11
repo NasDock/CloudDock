@@ -6,6 +6,7 @@ import {
   addVPNStatusListener,
   addVPNPacketListener,
   sendVPNPacket,
+  requestVPNPermission,
 } from '../native/vpn';
 import {
   sendIPPacket,
@@ -47,6 +48,11 @@ export const useVPNStore = create<VPNState>((set, get) => ({
   startVPN: async () => {
     set({ status: 'connecting', error: null });
     try {
+      const permissionGranted = await requestVPNPermission();
+      if (!permissionGranted) {
+        throw new Error('VPN permission not granted');
+      }
+
       await startVPN({
         tunnelAddress: get().virtualIp,
         subnetMask: '255.255.255.0',
