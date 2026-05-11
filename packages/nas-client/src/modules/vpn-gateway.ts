@@ -21,14 +21,12 @@ export interface VPNGateway {
 type TunConstructor = new () => TunType;
 
 async function loadTunConstructor(): Promise<TunConstructor> {
-  try {
-    const mod = await import('tuntap2');
-    return mod.Tun as TunConstructor;
-  } catch (err: any) {
+  const mod = await import('tuntap2').catch((err: any) => {
     throw new Error(
       `tuntap2 native addon is unavailable: ${err?.message || String(err)}`
     );
-  }
+  });
+  return mod.Tun as TunConstructor;
 }
 
 class VPNGatewayImpl implements VPNGateway {

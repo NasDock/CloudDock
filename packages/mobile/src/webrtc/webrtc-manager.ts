@@ -169,8 +169,8 @@ export class WebRTCManager {
           deviceId: this.deviceId,
           data: {
             candidate: event.candidate.candidate,
-            sdpMid: event.candidate.sdpMid || undefined,
-            sdpMLineIndex: event.candidate.sdpMLineIndex || undefined,
+            sdpMid: event.candidate.sdpMid ?? undefined,
+            sdpMLineIndex: event.candidate.sdpMLineIndex ?? undefined,
           },
         });
       }
