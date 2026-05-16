@@ -159,6 +159,52 @@ class VPNGatewayImpl implements VPNGateway {
   }
 }
 
+class NoopVPNGateway implements VPNGateway {
+  private config: VPNGatewayConfig;
+  private running = false;
+  private packetCount = 0;
+
+  onPacketReceived?: (packet: Buffer) => void;
+
+  constructor(config: VPNGatewayConfig) {
+    this.config = config;
+  }
+
+  async start(): Promise<void> {
+    logger.warn('NoopVPNGateway: TUN interface not available (tuntap2 missing). VPN packet forwarding is DISABLED.', {
+      tunAddress: this.config.tunAddress,
+    });
+    this.running = true;
+  }
+
+  stop(): void {
+    this.running = false;
+    logger.info('NoopVPNGateway stopped');
+  }
+
+  sendPacket(packet: Buffer): void {
+    this.packetCount++;
+    if (this.packetCount <= 5 || this.packetCount % 100 === 0) {
+      logger.warn('NoopVPNGateway: packet dropped (no TUN interface)', {
+        packetLength: packet.length,
+        totalDropped: this.packetCount,
+      });
+    }
+  }
+
+  isRunning(): boolean {
+    return this.running;
+  }
+
+  getTunName(): string | undefined {
+    return undefined;
+  }
+}
+
 export function createVPNGateway(config: VPNGatewayConfig): VPNGateway {
   return new VPNGatewayImpl(config);
+}
+
+export function createNoopVPNGateway(config: VPNGatewayConfig): VPNGateway {
+  return new NoopVPNGateway(config);
 }
