@@ -101,7 +101,8 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
             reactContext.startService(serviceIntent)
         }
 
-        promise.resolve(java.util.HashMap<String, Any>().apply { put("success", true) })
+        val result = Arguments.createMap().apply { putBoolean("success", true) }
+        promise.resolve(result)
     }
 
     @ReactMethod
@@ -110,7 +111,8 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
             action = "STOP"
         }
         reactContext.startService(intent)
-        promise.resolve(java.util.HashMap<String, Any>().apply { put("success", true) })
+        val result = Arguments.createMap().apply { putBoolean("success", true) }
+        promise.resolve(result)
     }
 
     @ReactMethod
@@ -119,7 +121,8 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
             CloudDockVpnService.isRunning -> "connected"
             else -> "disconnected"
         }
-        promise.resolve(java.util.HashMap<String, Any>().apply { put("status", status) })
+        val result = Arguments.createMap().apply { putString("status", status) }
+        promise.resolve(result)
     }
 
     @ReactMethod
@@ -127,7 +130,8 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
         try {
             val packet = Base64.decode(packetBase64, Base64.NO_WRAP)
             CloudDockVpnService.instance?.writePacket(packet)
-            promise.resolve(java.util.HashMap<String, Any>().apply { put("success", true) })
+            val result = Arguments.createMap().apply { putBoolean("success", true) }
+            promise.resolve(result)
         } catch (e: Exception) {
             promise.reject("SEND_FAILED", e.message, e)
         }
