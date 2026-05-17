@@ -45,6 +45,15 @@ services:
     ports:
       - '3000:3000'  # Web UI
       - '5700:5700'  # NAS local API
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+    # 如果 cap_add 在绿联 NAS 上不生效，取消下面这行的注释
+    # privileged: true
 
 volumes:
   redis_data:

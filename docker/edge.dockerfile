@@ -11,7 +11,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/nas-client/package.json ./packages/nas-client/
 COPY packages/web/package.json ./packages/web/
 COPY packages/shared/package.json ./packages/shared/
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts=false
 
 FROM deps AS shared-builder
 WORKDIR /app/packages/shared
@@ -53,7 +53,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends nginx iptables procps \
+  && apt-get install -y --no-install-recommends nginx iptables procps iproute2 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=app-builder /app/nas-client-deploy/node_modules ./node_modules
