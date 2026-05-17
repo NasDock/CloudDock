@@ -79,11 +79,13 @@ export const useVPNStore = create<VPNState>((set, get) => ({
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
-          sendIPPacket(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+          const sent = sendIPPacket(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+          if (!sent) {
+            console.warn('[vpn] sendIPPacket returned false, packet may be dropped');
+          }
         } else {
-          // Phase 5: fallback to WebSocket tunnel binary mode
-          // For now, packets are dropped when P2P is not ready
-          console.warn('[vpn] WebRTC not ready, packet dropped (fallback not yet implemented)');
+          // WebRTC not ready — packets cannot be forwarded
+          console.warn('[vpn] WebRTC not ready, packet dropped');
         }
       });
 
@@ -114,14 +116,25 @@ export const useVPNStore = create<VPNState>((set, get) => ({
           if (current.status === 'connected' && current.error?.includes('P2P')) {
             set({ error: null });
           }
-        } else if (state === 'failed' || state === 'disconnected') {
-          if (current.status === 'connected') {
-            set({
-              error: 'P2P 连接已断开，正在尝试重连...',
-            });
-          }
+        } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+          // WebRTC disconnected → VPN is effectively down
+          set({ status: 'failed', error: 'P2P 连接已断开，组网不可用' });
         }
       });
+
+      // Wait for WebRTC to be ready before marking as connected
+      const waitForWebRTC = async (): Promise<boolean> => {
+        for (let i = 0; i < 50; i++) {
+          if (isWebRTCReady()) return true;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        return false;
+      };
+
+      const webRTCReady = await waitForWebRTC();
+      if (!webRTCReady) {
+        throw new Error('P2P 连接超时，无法建立组网');
+      }
 
       set({ status: 'connected' });
 

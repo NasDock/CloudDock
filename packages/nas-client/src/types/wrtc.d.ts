@@ -1,4 +1,4 @@
-declare module 'wrtc' {
+declare module '@roamhq/wrtc' {
   export class RTCPeerConnection {
     constructor(config?: any);
     createDataChannel(label: string, options?: any): any;

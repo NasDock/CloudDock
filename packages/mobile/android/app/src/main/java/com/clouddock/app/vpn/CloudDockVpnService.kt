@@ -54,6 +54,10 @@ class CloudDockVpnService : VpnService() {
             return START_NOT_STICKY
         }
 
+        // Android 8.0+：startForegroundService 必须在 5 秒内调用 startForeground
+        // 先启动一个临时通知，避免超时崩溃，再进行 VPN 配置
+        startForeground(NOTIFICATION_ID, buildNotification("正在启动异地组网..."))
+
         val tunnelAddress = intent?.getStringExtra("tunnelAddress") ?: "100.64.0.2"
         val subnetMask = intent?.getStringExtra("subnetMask") ?: "255.255.255.0"
         val mtu = intent?.getIntExtra("mtu", 1280) ?: 1280
@@ -97,6 +101,9 @@ class CloudDockVpnService : VpnService() {
         vpnInterface = builder.establish()
         if (vpnInterface == null) {
             Log.e(TAG, "Failed to establish VPN interface")
+            // 更新通知显示错误
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.notify(NOTIFICATION_ID, buildNotification("VPN 启动失败"))
             return
         }
 
@@ -105,7 +112,9 @@ class CloudDockVpnService : VpnService() {
         isRunning = true
         instance = this
 
-        startForeground(NOTIFICATION_ID, buildNotification())
+        // VPN 建立成功后更新通知文本
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID, buildNotification("异地组网连接中"))
 
         executor = Executors.newSingleThreadExecutor()
         executor?.execute { readLoop() }
@@ -183,7 +192,7 @@ class CloudDockVpnService : VpnService() {
         }
     }
 
-    private fun buildNotification(): Notification {
+    private fun buildNotification(contentText: String = "异地组网连接中"): Notification {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -193,7 +202,7 @@ class CloudDockVpnService : VpnService() {
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle("CloudDock VPN")
-            .setContentText("异地组网连接中")
+            .setContentText(contentText)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

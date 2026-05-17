@@ -8,7 +8,7 @@ import type {
   WebRTCFileMeta,
 } from '@cloud-dock/shared';
 import { SignalClient } from './signal-client.js';
-import wrtc from 'wrtc';
+import wrtc from '@roamhq/wrtc';
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc as any;
 
 export interface WebRTCManagerOptions {
@@ -273,17 +273,18 @@ export class WebRTCManager {
         const data = String(evt.data || '');
         if (!data) return;
         try {
-          const msg = JSON.parse(data) as WebRTCDataMessage;
-          if (msg.type === 'file_complete') {
-            logger.info('WebRTC file received (NAS)', { transferId: msg.meta.transferId });
-          } else if (msg.type === 'ip_packet') {
+          const msg = JSON.parse(data) as any;
+          const msgType = msg?.type as string;
+          if (msgType === 'file_complete') {
+            logger.info('WebRTC file received (NAS)', { transferId: msg.meta?.transferId });
+          } else if (msgType === 'ip_packet' && msg.data) {
             try {
               const packet = Buffer.from(msg.data, 'base64');
               this.onIPPacketReceived?.(packet);
             } catch {
               // ignore invalid ip packet
             }
-          } else if (msg.type === 'vpn_control') {
+          } else if (msgType === 'vpn_control') {
             this.onVPNControlReceived?.(msg);
           }
         } catch {

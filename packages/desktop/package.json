@@ -11,12 +11,12 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "dist:linux": "electron-builder --linux",
-    "postinstall": "electron-rebuild",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@cloud-dock/shared": "workspace:*",
     "@cloud-dock/web": "workspace:*",
+    "@roamhq/wrtc": "^0.8.0",
     "axios": "^1.7.0",
     "electron-store": "^10.0.0",
     "koffi": "^2.16.2",
@@ -24,7 +24,6 @@
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.26.0",
     "utun": "2.0.0",
-    "wrtc": "^0.4.7",
     "ws": "^8.18.0"
   },
   "devDependencies": {

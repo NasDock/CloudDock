@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@cloud-dock/shared": "workspace:*",
+    "@roamhq/wrtc": "^0.8.0",
     "bcrypt": "^5.1.1",
     "inquirer": "^9.2.0",
     "js-yaml": "^4.1.0",
@@ -25,7 +26,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tuntap2": "^0.9.1",
-    "wrtc": "^0.4.7",
     "ws": "^8.18.0",
     "zod": "^3.23.0",
     "zustand": "^4.5.5"

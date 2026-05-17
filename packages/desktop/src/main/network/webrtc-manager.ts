@@ -1,5 +1,5 @@
 import { SignalClient } from './signal-client';
-import wrtc from 'wrtc';
+import wrtc from '@roamhq/wrtc';
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc as any;
 
 export interface WebRTCManagerOptions {

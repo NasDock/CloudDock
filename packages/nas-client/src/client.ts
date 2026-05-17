@@ -237,10 +237,17 @@ export class NASClient extends EventEmitter {
       await this.vpnGateway.start();
       logger.info('VPN gateway started');
     } catch (err: any) {
-      this.vpnGateway = undefined;
-      logger.warn('VPN gateway unavailable; continuing with WebSocket tunnel forwarding only', {
+      logger.warn('VPN gateway unavailable; using noop fallback', {
         error: err?.message || String(err),
       });
+      // Use noop gateway so packets are logged instead of silently dropped
+      this.vpnGateway = vpnModule.createNoopVPNGateway({
+        tunAddress: '100.64.0.1',
+        subnetMask: '255.255.255.0',
+        mtu: 1280,
+        localSubnet: '192.168.0.0/16',
+      });
+      await this.vpnGateway.start();
     }
   }
 
@@ -264,7 +271,13 @@ export class NASClient extends EventEmitter {
 
     // Wire VPN gateway ↔ WebRTC data channel
     this.webrtcManager.onIPPacketReceived = (packet) => {
-      this.vpnGateway?.sendPacket(packet);
+      if (!this.vpnGateway) {
+        logger.warn('Received IP packet from WebRTC but no VPN gateway available', {
+          packetLength: packet.length,
+        });
+        return;
+      }
+      this.vpnGateway.sendPacket(packet);
     };
 
     this.webrtcManager.start().catch((err) => {
