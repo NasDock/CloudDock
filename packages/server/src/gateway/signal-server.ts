@@ -58,12 +58,14 @@ export class SignalServer {
     const token = url.searchParams.get('token');
 
     if (!deviceId) {
+      this.fastify.log.warn({ roleParam }, 'Rejecting signal connection: deviceId required');
       ws.close(1008, 'deviceId required');
       return;
     }
 
     const role = getRoleFromParams(roleParam, clientKey, token);
     if (!role) {
+      this.fastify.log.warn({ deviceId, roleParam }, 'Rejecting signal connection: role required');
       ws.close(1008, 'role required');
       return;
     }
@@ -73,6 +75,7 @@ export class SignalServer {
 
       if (role === 'nas') {
         if (!clientKey) {
+          this.fastify.log.warn({ deviceId, role }, 'Rejecting signal connection: clientKey required for nas');
           ws.close(1008, 'clientKey required for nas');
           return;
         }
@@ -81,10 +84,12 @@ export class SignalServer {
           select: { clientId: true, clientKey: true, userId: true, enabled: true },
         });
         if (!client || client.clientKey !== clientKey) {
+          this.fastify.log.warn({ deviceId, role }, 'Rejecting signal connection: invalid clientKey');
           ws.close(4001, 'Invalid clientKey');
           return;
         }
         if (!client.enabled) {
+          this.fastify.log.warn({ deviceId, role, userId: client.userId }, 'Rejecting signal connection: client disabled');
           ws.close(4003, 'Client disabled');
           return;
         }
@@ -92,12 +97,14 @@ export class SignalServer {
       } else {
         // mobile and desktop both use JWT token auth
         if (!token) {
+          this.fastify.log.warn({ deviceId, role }, 'Rejecting signal connection: token required');
           ws.close(1008, `token required for ${role}`);
           return;
         }
         const decoded = this.fastify.jwt.verify(token) as { userId?: string; sub?: string };
         userId = decoded.userId || decoded.sub || null;
         if (!userId) {
+          this.fastify.log.warn({ deviceId, role }, 'Rejecting signal connection: invalid token');
           ws.close(4001, 'Invalid token');
           return;
         }
@@ -106,16 +113,24 @@ export class SignalServer {
           select: { clientId: true, userId: true, enabled: true },
         });
         if (!client || client.userId !== userId) {
+          this.fastify.log.warn({ deviceId, role, userId }, 'Rejecting signal connection: device not owned by user');
           ws.close(4003, 'Device not owned by user');
           return;
         }
         if (!client.enabled) {
+          this.fastify.log.warn({ deviceId, role, userId }, 'Rejecting signal connection: client disabled');
           ws.close(4003, 'Client disabled');
           return;
         }
       }
 
-      const conn = connections.get(deviceId) || { userId, deviceId };
+      if (!userId) {
+        this.fastify.log.warn({ deviceId, role }, 'Rejecting signal connection: missing authenticated user');
+        ws.close(4001, 'Invalid user');
+        return;
+      }
+
+      const conn: SignalConnection = connections.get(deviceId) || { userId, deviceId };
       if (role === 'nas') {
         conn.nas = ws;
       } else if (role === 'mobile') {
@@ -127,6 +142,8 @@ export class SignalServer {
 
       (ws as any).deviceId = deviceId;
       (ws as any).role = role;
+
+      this.fastify.log.info({ deviceId, role, userId }, 'Signal client connected');
 
       ws.send(JSON.stringify({
         type: 'signal_ready',
@@ -143,7 +160,14 @@ export class SignalServer {
         }
       });
 
-      ws.on('close', () => {
+      ws.on('close', (code, reason) => {
+        this.fastify.log.info({
+          deviceId,
+          role,
+          code,
+          reason: reason.toString(),
+        }, 'Signal client disconnected');
+
         const existing = connections.get(deviceId);
         if (!existing) return;
         if (role === 'nas' && existing.nas === ws) existing.nas = undefined;
@@ -161,22 +185,39 @@ export class SignalServer {
 
   private forwardMessage(deviceId: string, from: Role, message: any): void {
     const conn = connections.get(deviceId);
-    if (!conn) return;
+    if (!conn) {
+      this.fastify.log.warn({
+        deviceId,
+        from,
+        type: message?.type,
+        messageId: message?.id,
+      }, 'Signal message dropped because no connection exists for device');
+      return;
+    }
 
-    const targets: WebSocket[] = [];
+    const targets: { role: Role; ws: WebSocket }[] = [];
     if (conn.nas && conn.nas.readyState === WebSocket.OPEN && from !== 'nas') {
-      targets.push(conn.nas);
+      targets.push({ role: 'nas', ws: conn.nas });
     }
     if (conn.mobile && conn.mobile.readyState === WebSocket.OPEN && from !== 'mobile') {
-      targets.push(conn.mobile);
+      targets.push({ role: 'mobile', ws: conn.mobile });
     }
     if (conn.desktop && conn.desktop.readyState === WebSocket.OPEN && from !== 'desktop') {
-      targets.push(conn.desktop);
+      targets.push({ role: 'desktop', ws: conn.desktop });
     }
+
+    this.fastify.log.info({
+      deviceId,
+      from,
+      type: message?.type,
+      messageId: message?.id,
+      targetRoles: targets.map((target) => target.role),
+      targetCount: targets.length,
+    }, targets.length > 0 ? 'Forwarding signal message' : 'Signal message has no open peer targets');
 
     const payload = JSON.stringify({ ...message, from });
     for (const target of targets) {
-      target.send(payload);
+      target.ws.send(payload);
     }
   }
 }

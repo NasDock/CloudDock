@@ -15,6 +15,11 @@ export class SignalClient {
 
   constructor(options: SignalClientOptions) {
     const url = new URL(options.serverUrl);
+    if (url.protocol === 'https:') {
+      url.protocol = 'wss:';
+    } else if (url.protocol === 'http:') {
+      url.protocol = 'ws:';
+    }
     url.pathname = '/ws/signal';
     url.searchParams.set('deviceId', options.deviceId);
     url.searchParams.set('token', options.token);
@@ -39,7 +44,15 @@ export class SignalClient {
     };
 
     this.ws.onerror = () => {
-      console.warn('[signal] error');
+      console.warn('[signal] error', this.signalUrl);
+    };
+
+    this.ws.onclose = (event) => {
+      console.info('[signal] closed', {
+        url: this.signalUrl,
+        code: event.code,
+        reason: event.reason,
+      });
     };
   }
 
