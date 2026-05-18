@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { RegisterInput, LoginInput } from '@cloud-dock/shared';
 import { generateUserId, generateRefreshTokenId } from '@cloud-dock/shared';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { config } from '../../config/index.js';
 
 const BCRYPT_ROUNDS = 12;
