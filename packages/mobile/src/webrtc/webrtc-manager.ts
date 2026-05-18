@@ -160,7 +160,13 @@ export class WebRTCManager {
 
   private ensurePeerConnection(): void {
     if (this.pc) return;
-    this.pc = new RTCPeerConnection({ iceServers: [] });
+    this.pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.miwifi.com:3478' },
+        { urls: 'stun:stun.qq.com:3478' },
+        { urls: 'stun:stun.chat.bilibili.com:3478' },
+      ],
+    });
     (this.pc as any).addEventListener('icecandidate', (event: any) => {
       if (event.candidate) {
         this.signalClient.send({
