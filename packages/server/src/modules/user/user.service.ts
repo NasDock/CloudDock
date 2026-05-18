@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../plugins/database.plugin.js';
 import { UpdateUserInput } from '@cloud-dock/shared';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const BCRYPT_ROUNDS = 12;
 
