@@ -3,6 +3,7 @@ import { WebRTCManager } from './webrtc-manager';
 let manager: WebRTCManager | null = null;
 
 export function startWebRTC(options: { serverUrl: string; deviceId: string; token: string }): WebRTCManager {
+  manager?.close();
   manager = new WebRTCManager(options);
   manager.start();
   return manager;

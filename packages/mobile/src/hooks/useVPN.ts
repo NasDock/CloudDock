@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useVPNStore } from '../stores/vpn-store';
-import { startWebRTC, stopWebRTC } from '../webrtc';
+import { isWebRTCReady, startWebRTC, stopWebRTC } from '../webrtc';
 import api from '../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deviceApi } from '../api/device';
@@ -9,7 +9,15 @@ import { deviceApi } from '../api/device';
 let globalWebRTCStarted = false;
 
 async function ensureWebRTCStarted(): Promise<boolean> {
-  if (globalWebRTCStarted) return true;
+  if (globalWebRTCStarted) {
+    if (isWebRTCReady()) return true;
+
+    // A previous best-effort start may have timed out and closed its peer
+    // connection while leaving the global flag set. Reset it so an explicit
+    // VPN start can create a fresh signal/WebRTC session.
+    stopWebRTC();
+    globalWebRTCStarted = false;
+  }
 
   try {
     const token = await AsyncStorage.getItem('accessToken');
