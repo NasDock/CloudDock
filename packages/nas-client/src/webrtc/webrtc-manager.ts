@@ -224,7 +224,11 @@ export class WebRTCManager {
     if (existing) return existing;
 
     const pc = new RTCPeerConnection({
-      iceServers: [],
+      iceServers: [
+        { urls: 'stun:stun.miwifi.com:3478' },
+        { urls: 'stun:stun.qq.com:3478' },
+        { urls: 'stun:stun.chat.bilibili.com:3478' },
+      ],
     });
 
     const peer: PeerState = { pc, dataChannel: null, ready: false };
