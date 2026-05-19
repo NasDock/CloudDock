@@ -267,6 +267,7 @@ export class NASClient extends EventEmitter {
       serverUrl: this.serverUrl,
       deviceId: this.deviceId,
       clientKey: this.clientKey,
+      localSubnet: this.vpnGateway ? '192.168.0.0/16' : undefined,
     });
 
     // Wire VPN gateway ↔ WebRTC data channel

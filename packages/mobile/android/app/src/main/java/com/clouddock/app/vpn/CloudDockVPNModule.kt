@@ -137,6 +137,18 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun addRoutes(routes: ReadableArray, promise: Promise) {
+        val routeList = routes.toArrayList()?.map { it.toString() } as? ArrayList<String>
+        if (routeList == null || routeList.isEmpty()) {
+            promise.reject("INVALID_ROUTES", "No routes provided", null)
+            return
+        }
+        val success = CloudDockVpnService.instance?.addRoutes(routeList) ?: false
+        val result = Arguments.createMap().apply { putBoolean("success", success) }
+        promise.resolve(result)
+    }
+
     private fun emitEvent(eventName: String, data: Any?) {
         reactContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
