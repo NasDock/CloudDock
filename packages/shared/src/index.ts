@@ -8,6 +8,7 @@ export * from './types/webrtc-data.js';
 export * from './types/request-device.js';
 export * from './types/api.js';
 export * from './constants/index.js';
+export * from './constants/ice-servers.js';
 export * from './utils/id.js';
 export * from './utils/validation.js';
 export * from './utils/token.js';

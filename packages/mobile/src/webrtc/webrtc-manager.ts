@@ -5,7 +5,9 @@ import type {
   WebRTCIcePayload,
   WebRTCDataMessage,
   WebRTCFileMeta,
+  TurnServerConfig,
 } from '@cloud-dock/shared';
+import { buildIceServers } from '@cloud-dock/shared';
 import { SignalClient } from './signal-client';
 import {
   RTCPeerConnection,
@@ -18,6 +20,7 @@ export interface WebRTCManagerOptions {
   serverUrl: string;
   deviceId: string;
   token: string;
+  turnServers?: TurnServerConfig[];
 }
 
 export class WebRTCManager {
@@ -26,6 +29,7 @@ export class WebRTCManager {
   private pc: RTCPeerConnection | null = null;
   private dataChannel: any | null = null;
   private deviceId: string;
+  private options: WebRTCManagerOptions;
   private readonly chunkSize = 32 * 1024;
   private incomingFiles = new Map<string, { meta: WebRTCFileMeta; chunks: string[] }>();
   private connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -37,6 +41,7 @@ export class WebRTCManager {
   onConnectionStateChange?: (state: 'connected' | 'failed' | 'disconnected' | 'closed') => void;
 
   constructor(options: WebRTCManagerOptions) {
+    this.options = options;
     this.signalClient = new SignalClient(options);
     this.deviceId = options.deviceId;
     this.signalClient.onMessage((msg) => this.handleSignal(msg));
@@ -160,13 +165,8 @@ export class WebRTCManager {
 
   private ensurePeerConnection(): void {
     if (this.pc) return;
-    this.pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.miwifi.com:3478' },
-        { urls: 'stun:stun.qq.com:3478' },
-        { urls: 'stun:stun.chat.bilibili.com:3478' },
-      ],
-    });
+    const iceServers = buildIceServers(this.options.turnServers);
+    this.pc = new RTCPeerConnection({ iceServers });
     (this.pc as any).addEventListener('icecandidate', (event: any) => {
       if (event.candidate) {
         this.signalClient.send({
@@ -244,6 +244,8 @@ export class WebRTCManager {
         }
       } catch {}
     };
+
+
   }
 
   private async startAsCaller(): Promise<void> {
