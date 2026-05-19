@@ -46,5 +46,18 @@ export interface WebRTCVPNControl {
   payload?: unknown;
 }
 
+// TURN server configuration for WebRTC ICE
+export interface TurnServerConfig {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
+export interface IceServerConfig {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
 export type WebRTCDataMessage = WebRTCFileChunk | WebRTCFileComplete | WebRTCFileError | WebRTCIPPacket | WebRTCVPNControl;
 
