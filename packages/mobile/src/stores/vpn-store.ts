@@ -12,6 +12,7 @@ import {
   sendIPPacket,
   setIPPacketHandler,
   setConnectionStateHandler,
+  setVPNControlHandler,
   isWebRTCReady,
 } from '../webrtc';
 
@@ -119,6 +120,26 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
           // WebRTC disconnected → VPN is effectively down
           set({ status: 'failed', error: 'P2P 连接已断开，组网不可用' });
+        }
+      });
+
+      // Handle VPN control messages from NAS (e.g. route updates)
+      setVPNControlHandler((msg: any) => {
+        if (msg?.action === 'route_update' && msg?.payload?.routes) {
+          const newRoutes = msg.payload.routes as string[];
+          console.info('[vpn] Received route update from NAS', newRoutes);
+          // Dynamically add routes to the VPN tunnel
+          import('../native/vpn').then(({ addVPNRoutes }) => {
+            addVPNRoutes(newRoutes).then((result) => {
+              if (result.success) {
+                console.info('[vpn] Routes added successfully', newRoutes);
+              } else {
+                console.warn('[vpn] Failed to add routes dynamically', newRoutes);
+              }
+            }).catch((err) => {
+              console.warn('[vpn] Error adding routes', err);
+            });
+          });
         }
       });
 

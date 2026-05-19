@@ -6,7 +6,9 @@ import type {
   WebRTCIcePayload,
   WebRTCDataMessage,
   WebRTCFileMeta,
+  TurnServerConfig,
 } from '@cloud-dock/shared';
+import { buildIceServers } from '@cloud-dock/shared';
 import { SignalClient } from './signal-client.js';
 import wrtc from '@roamhq/wrtc';
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = wrtc as any;
@@ -15,6 +17,8 @@ export interface WebRTCManagerOptions {
   serverUrl: string;
   deviceId: string;
   clientKey: string;
+  turnServers?: TurnServerConfig[];
+  localSubnet?: string;
 }
 
 interface PeerState {
@@ -27,6 +31,7 @@ export class WebRTCManager {
   private signalClient: SignalClient;
   private peers = new Map<string, PeerState>();
   private deviceId: string;
+  private options: WebRTCManagerOptions;
   private readonly chunkSize = 32 * 1024;
   private connectTimer?: ReturnType<typeof setTimeout>;
   private readonly connectTimeoutMs = 15000;
@@ -36,6 +41,7 @@ export class WebRTCManager {
   onVPNControlReceived?: (msg: any) => void;
 
   constructor(options: WebRTCManagerOptions) {
+    this.options = options;
     this.signalClient = new SignalClient(options);
     this.deviceId = options.deviceId;
     this.signalClient.onMessage((msg) => this.handleSignal(msg));
@@ -223,13 +229,8 @@ export class WebRTCManager {
     const existing = this.peers.get(peerId);
     if (existing) return existing;
 
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.miwifi.com:3478' },
-        { urls: 'stun:stun.qq.com:3478' },
-        { urls: 'stun:stun.chat.bilibili.com:3478' },
-      ],
-    });
+    const iceServers = buildIceServers(this.options.turnServers);
+    const pc = new RTCPeerConnection({ iceServers });
 
     const peer: PeerState = { pc, dataChannel: null, ready: false };
     this.peers.set(peerId, peer);
@@ -269,6 +270,21 @@ export class WebRTCManager {
         peer.ready = true;
         this.clearConnectTimer();
         logger.info('WebRTC data channel open (NAS)', { peerId });
+
+        // Notify mobile of the local subnet so it can route LAN traffic
+        const localSubnet = this.options.localSubnet;
+        if (localSubnet && peer.dataChannel?.readyState === 'open') {
+          try {
+            peer.dataChannel.send(JSON.stringify({
+              type: 'vpn_control',
+              action: 'route_update',
+              payload: { routes: [localSubnet] },
+            }));
+            logger.info('Sent local subnet to mobile', { peerId, localSubnet });
+          } catch (err: any) {
+            logger.warn('Failed to send local subnet to mobile', { peerId, error: err.message });
+          }
+        }
       };
       peer.dataChannel.onclose = () => {
         peer.ready = false;

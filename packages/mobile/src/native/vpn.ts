@@ -98,3 +98,15 @@ export async function checkVPNPermission(): Promise<boolean> {
   // Android: permission check is done in startVPN
   return true;
 }
+
+/**
+ * Add additional routes to an already-running VPN tunnel.
+ * On Android this re-configures the VPN interface; on iOS it may require restart.
+ */
+export async function addVPNRoutes(routes: string[]): Promise<{ success: boolean }> {
+  if (Platform.OS === 'android' && CloudDockVPNBridge.addRoutes) {
+    return CloudDockVPNBridge.addRoutes(routes);
+  }
+  // iOS / fallback: routes must be provided at start time
+  return { success: false };
+}

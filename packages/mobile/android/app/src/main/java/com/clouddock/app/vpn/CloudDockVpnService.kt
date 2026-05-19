@@ -41,6 +41,7 @@ class CloudDockVpnService : VpnService() {
     private var inputStream: FileInputStream? = null
     private var outputStream: FileOutputStream? = null
     private var executor: ExecutorService? = null
+    private var lastIntent: Intent? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -57,6 +58,8 @@ class CloudDockVpnService : VpnService() {
         // Android 8.0+：startForegroundService 必须在 5 秒内调用 startForeground
         // 先启动一个临时通知，避免超时崩溃，再进行 VPN 配置
         startForeground(NOTIFICATION_ID, buildNotification("正在启动异地组网..."))
+
+        lastIntent = intent
 
         val tunnelAddress = intent?.getStringExtra("tunnelAddress") ?: "100.64.0.2"
         val subnetMask = intent?.getStringExtra("subnetMask") ?: "255.255.255.0"
@@ -146,7 +149,42 @@ class CloudDockVpnService : VpnService() {
         }
     }
 
-    private fun stopVpn() {
+    /**
+     * Add new routes to the existing VPN interface.
+     * Note: Android VpnService.Builder routes are set at establish() time.
+     * To add routes dynamically, we must restart the VPN interface.
+     */
+    fun addRoutes(newRoutes: ArrayList<String>): Boolean {
+        if (!isRunning || vpnInterface == null) {
+            Log.w(TAG, "Cannot add routes: VPN not running")
+            return false
+        }
+
+        val currentAddress = lastIntent?.getStringExtra("tunnelAddress") ?: "100.64.0.2"
+        val currentMask = lastIntent?.getStringExtra("subnetMask") ?: "255.255.255.0"
+        val currentMtu = lastIntent?.getIntExtra("mtu", 1280) ?: 1280
+        val currentDns = lastIntent?.getStringArrayListExtra("dnsServers") ?: arrayListOf("8.8.8.8", "1.1.1.1")
+        val currentRoutes = lastIntent?.getStringArrayListExtra("routes") ?: arrayListOf("100.64.0.0/24")
+
+        // Merge new routes, avoiding duplicates
+        val mergedRoutes = ArrayList(currentRoutes)
+        for (route in newRoutes) {
+            if (!mergedRoutes.contains(route)) {
+                mergedRoutes.add(route)
+            }
+        }
+
+        // Update intent extras for future reference
+        lastIntent?.putStringArrayListExtra("routes", mergedRoutes)
+
+        // Restart VPN with merged routes
+        stopVpnInternal()
+        startVpn(currentAddress, currentMask, currentMtu, mergedRoutes, currentDns)
+        Log.i(TAG, "VPN routes updated: $mergedRoutes")
+        return true
+    }
+
+    private fun stopVpnInternal() {
         isRunning = false
         instance = null
         try {
@@ -161,6 +199,10 @@ class CloudDockVpnService : VpnService() {
         vpnInterface = null
         executor?.shutdownNow()
         executor = null
+    }
+
+    private fun stopVpn() {
+        stopVpnInternal()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
