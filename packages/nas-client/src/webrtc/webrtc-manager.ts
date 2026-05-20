@@ -137,6 +137,14 @@ export class WebRTCManager {
 
     try {
       switch (msg.type) {
+      case 'signal_ready': {
+        const payload = msg.data as { turnServers?: TurnServerConfig[] };
+        if (payload?.turnServers && payload.turnServers.length > 0) {
+          this.options.turnServers = payload.turnServers;
+          logger.info('Signal ready: configured TURN servers', { count: payload.turnServers.length });
+        }
+        break;
+      }
       case 'offer': {
         const payload = msg.data as WebRTCOfferPayload;
         const peer = await this.ensurePeerConnection(peerId);

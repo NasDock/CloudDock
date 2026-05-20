@@ -154,6 +154,11 @@ export class WebRTCManager {
         break;
       }
       case 'signal_ready': {
+        const payload = msg.data as { turnServers?: TurnServerConfig[] };
+        if (payload?.turnServers && payload.turnServers.length > 0) {
+          this.options.turnServers = payload.turnServers;
+          console.info('[webrtc] Signal ready: configured TURN servers', payload.turnServers.length);
+        }
         // Mobile acts as caller by default: create offer
         this.startAsCaller();
         break;

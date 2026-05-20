@@ -12,8 +12,12 @@ export function setupLinuxNetworking(config: NetworkConfig): void {
   const { tunName, tunAddress, localSubnets } = config;
 
   try {
-    // Enable IP forwarding
-    execSync('sysctl -w net.ipv4.ip_forward=1', { stdio: 'ignore' });
+    // Enable IP forwarding (ignore if fails in docker/restricted env where sysctls option is used)
+    try {
+      execSync('sysctl -w net.ipv4.ip_forward=1', { stdio: 'ignore' });
+    } catch (err: any) {
+      logger.info('Could not enable IP forwarding via sysctl, assuming it is set via Docker/system config', { error: err.message });
+    }
 
     // Setup NAT for traffic from TUN to local network
     // Using iptables-legacy or iptables depending on system

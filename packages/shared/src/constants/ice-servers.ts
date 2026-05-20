@@ -5,8 +5,20 @@ export const DEFAULT_STUN_SERVERS: IceServerConfig[] = [
   { urls: 'stun:stun.chat.bilibili.com:3478' },
 ];
 
-// Default TURN servers (placeholder - users should configure their own)
-export const DEFAULT_TURN_SERVERS: IceServerConfig[] = [];
+// Default TURN servers (load from env if available in Node environment)
+const getEnvTurnServers = (): IceServerConfig[] => {
+  const globalEnv = (globalThis as any).process?.env;
+  if (globalEnv && globalEnv.CLOUD_DOCK_TURN_SERVERS) {
+    try {
+      return JSON.parse(globalEnv.CLOUD_DOCK_TURN_SERVERS);
+    } catch {
+      // ignore
+    }
+  }
+  return [];
+};
+
+export const DEFAULT_TURN_SERVERS: IceServerConfig[] = getEnvTurnServers();
 
 export interface IceServerConfig {
   urls: string | string[];
@@ -21,6 +33,8 @@ export function buildIceServers(
   const servers: IceServerConfig[] = [...DEFAULT_STUN_SERVERS];
   if (turnServers && turnServers.length > 0) {
     servers.push(...turnServers);
+  } else if (DEFAULT_TURN_SERVERS.length > 0) {
+    servers.push(...DEFAULT_TURN_SERVERS);
   }
   return servers;
 }

@@ -145,10 +145,20 @@ export class SignalServer {
 
       this.fastify.log.info({ deviceId, role, userId }, 'Signal client connected');
 
+      const turnServersEnv = process.env.CLOUD_DOCK_TURN_SERVERS;
+      let turnServers: any[] = [];
+      if (turnServersEnv) {
+        try {
+          turnServers = JSON.parse(turnServersEnv);
+        } catch (err: any) {
+          this.fastify.log.error({ err: err.message, turnServersEnv }, 'Failed to parse CLOUD_DOCK_TURN_SERVERS environment variable');
+        }
+      }
+
       ws.send(JSON.stringify({
         type: 'signal_ready',
         id: `sig_${Date.now()}`,
-        data: { deviceId, role },
+        data: { deviceId, role, turnServers },
       }));
 
       ws.on('message', (data: Buffer) => {

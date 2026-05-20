@@ -105,6 +105,10 @@ export class WebRTCManager {
         break;
       }
       case 'signal_ready': {
+        const payload = msg.data;
+        if (payload?.turnServers && payload.turnServers.length > 0) {
+          (this as any).turnServers = payload.turnServers;
+        }
         this.startAsCaller();
         break;
       }
@@ -115,12 +119,14 @@ export class WebRTCManager {
 
   private ensurePeerConnection(): void {
     if (this.pc) return;
+    const stunServers = [
+      { urls: 'stun:stun.miwifi.com:3478' },
+      { urls: 'stun:stun.qq.com:3478' },
+      { urls: 'stun:stun.chat.bilibili.com:3478' },
+    ];
+    const turnServers = (this as any).turnServers || [];
     this.pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.miwifi.com:3478' },
-        { urls: 'stun:stun.qq.com:3478' },
-        { urls: 'stun:stun.chat.bilibili.com:3478' },
-      ],
+      iceServers: [...stunServers, ...turnServers],
     });
 
     this.pc.onicecandidate = (event: any) => {
