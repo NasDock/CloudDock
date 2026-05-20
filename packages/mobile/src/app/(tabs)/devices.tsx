@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingBottom: 140,
     minHeight: '100%',
   },
   tabWrap: {

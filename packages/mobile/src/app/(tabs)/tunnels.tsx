@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   segmented: {},
   listContent: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,
