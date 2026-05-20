@@ -145,7 +145,7 @@ export const useVPNStore = create<VPNState>((set, get) => ({
 
       // Wait for WebRTC to be ready before marking as connected
       const waitForWebRTC = async (): Promise<boolean> => {
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 150; i++) {
           if (isWebRTCReady()) return true;
           await new Promise((r) => setTimeout(r, 200));
         }

@@ -31,6 +31,8 @@ export function TunnelForm({ initialData, onSubmit, onCancel, isLoading }: Tunne
 
     if (!name.trim()) {
       newErrors.name = '请输入隧道名称';
+    } else if (/[\u3400-\u9FFF]/.test(name.trim())) {
+      newErrors.name = '隧道名称不能包含中文字符，请使用英文，例如：AudioDock';
     }
 
     if (!localAddress.trim()) {
@@ -70,7 +72,7 @@ export function TunnelForm({ initialData, onSubmit, onCancel, isLoading }: Tunne
         label="隧道名称"
         value={name}
         onChangeText={setName}
-        placeholder="例如：我的NAS管理后台"
+        placeholder="例如：AudioDock"
         error={errors.name}
       />
 

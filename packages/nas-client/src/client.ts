@@ -7,6 +7,7 @@ import { HealthCheck } from './modules/health-check.js';
 import { TunnelManager } from './modules/tunnel-manager.js';
 import type { VPNGateway } from './modules/vpn-gateway.js';
 import { loadConfig, saveConfig, type NASConfig } from './utils/config-store.js';
+import { resolveLocalSubnets } from './utils/local-subnets.js';
 import { logger } from './utils/logger.js';
 import type { WebRTCManager } from './webrtc/webrtc-manager.js';
 
@@ -43,6 +44,7 @@ export class NASClient extends EventEmitter {
   private deviceId?: string;
   private webrtcManager?: WebRTCManager;
   private vpnGateway?: VPNGateway;
+  private localSubnets: string[] = resolveLocalSubnets();
   private pendingPairingResolve?: (key: string) => void;
   private pendingPairingReject?: (err: Error) => void;
 
@@ -232,7 +234,7 @@ export class NASClient extends EventEmitter {
         tunAddress: '100.64.0.1',
         subnetMask: '255.255.255.0',
         mtu: 1280,
-        localSubnet: '192.168.0.0/16',
+        localSubnets: this.localSubnets,
       });
       await this.vpnGateway.start();
       logger.info('VPN gateway started');
@@ -245,7 +247,7 @@ export class NASClient extends EventEmitter {
         tunAddress: '100.64.0.1',
         subnetMask: '255.255.255.0',
         mtu: 1280,
-        localSubnet: '192.168.0.0/16',
+        localSubnets: this.localSubnets,
       });
       await this.vpnGateway.start();
     }
@@ -267,7 +269,7 @@ export class NASClient extends EventEmitter {
       serverUrl: this.serverUrl,
       deviceId: this.deviceId,
       clientKey: this.clientKey,
-      localSubnet: this.vpnGateway ? '192.168.0.0/16' : undefined,
+      localSubnets: this.vpnGateway ? this.localSubnets : undefined,
     });
 
     // Wire VPN gateway ↔ WebRTC data channel
