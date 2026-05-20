@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
-    paddingBottom: 100,
+    paddingBottom: 0,
   },
   content: {
     flex: 1,

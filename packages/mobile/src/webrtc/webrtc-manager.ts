@@ -33,7 +33,7 @@ export class WebRTCManager {
   private readonly chunkSize = 32 * 1024;
   private incomingFiles = new Map<string, { meta: WebRTCFileMeta; chunks: string[] }>();
   private connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  private readonly connectTimeoutMs = 15000;
+  private readonly connectTimeoutMs = 30000;
 
   // VPN packet callbacks
   onIPPacketReceived?: (packet: ArrayBuffer) => void;

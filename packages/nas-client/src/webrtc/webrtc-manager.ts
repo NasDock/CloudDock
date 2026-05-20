@@ -18,7 +18,7 @@ export interface WebRTCManagerOptions {
   deviceId: string;
   clientKey: string;
   turnServers?: TurnServerConfig[];
-  localSubnet?: string;
+  localSubnets?: string[];
 }
 
 interface PeerState {
@@ -272,17 +272,17 @@ export class WebRTCManager {
         logger.info('WebRTC data channel open (NAS)', { peerId });
 
         // Notify mobile of the local subnet so it can route LAN traffic
-        const localSubnet = this.options.localSubnet;
-        if (localSubnet && peer.dataChannel?.readyState === 'open') {
+        const localSubnets = this.options.localSubnets || [];
+        if (localSubnets.length > 0 && peer.dataChannel?.readyState === 'open') {
           try {
             peer.dataChannel.send(JSON.stringify({
               type: 'vpn_control',
               action: 'route_update',
-              payload: { routes: [localSubnet] },
+              payload: { routes: localSubnets },
             }));
-            logger.info('Sent local subnet to mobile', { peerId, localSubnet });
+            logger.info('Sent local subnets to mobile', { peerId, localSubnets });
           } catch (err: any) {
-            logger.warn('Failed to send local subnet to mobile', { peerId, error: err.message });
+            logger.warn('Failed to send local subnets to mobile', { peerId, error: err.message });
           }
         }
       };

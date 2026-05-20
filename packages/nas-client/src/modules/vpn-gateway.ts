@@ -6,7 +6,7 @@ export interface VPNGatewayConfig {
   tunAddress: string;
   subnetMask: string;
   mtu?: number;
-  localSubnet?: string;
+  localSubnets?: string[];
 }
 
 export interface VPNGateway {
@@ -39,7 +39,7 @@ class VPNGatewayImpl implements VPNGateway {
   constructor(config: VPNGatewayConfig) {
     this.config = {
       mtu: 1280,
-      localSubnet: '192.168.0.0/16',
+      localSubnets: ['192.168.0.0/16'],
       ...config,
     };
   }
@@ -71,7 +71,7 @@ class VPNGatewayImpl implements VPNGateway {
       setupLinuxNetworking({
         tunName: this.tun.name,
         tunAddress: `${this.config.tunAddress}/${prefix}`,
-        localSubnet: this.config.localSubnet!,
+        localSubnets: this.config.localSubnets!,
         enableForwarding: true,
       });
 
@@ -93,7 +93,7 @@ class VPNGatewayImpl implements VPNGateway {
         teardownLinuxNetworking({
           tunName: this.tun.name,
           tunAddress: this.tun.ipv4 || this.config.tunAddress,
-          localSubnet: this.config.localSubnet!,
+          localSubnets: this.config.localSubnets!,
           enableForwarding: true,
         });
       } catch {
