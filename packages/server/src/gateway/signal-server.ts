@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../plugins/database.plugin.js';
+import { buildTurnServersFromEnv, type TurnServerConfig } from '../utils/turn-credentials.js';
 
 const SIGNAL_WS_PATH = '/ws/signal';
 
@@ -145,14 +146,10 @@ export class SignalServer {
 
       this.fastify.log.info({ deviceId, role, userId }, 'Signal client connected');
 
-      const turnServersEnv = process.env.CLOUD_DOCK_TURN_SERVERS;
-      let turnServers: any[] = [];
-      if (turnServersEnv) {
-        try {
-          turnServers = JSON.parse(turnServersEnv);
-        } catch (err: any) {
-          this.fastify.log.error({ err: err.message, turnServersEnv }, 'Failed to parse CLOUD_DOCK_TURN_SERVERS environment variable');
-        }
+      // Generate temporary TURN credentials (short-lived, no long-term secret exposed to clients)
+      const turnServers: TurnServerConfig[] = buildTurnServersFromEnv();
+      if (turnServers.length > 0) {
+        this.fastify.log.info({ deviceId, role, turnCount: turnServers.length }, 'Generated temporary TURN credentials');
       }
 
       ws.send(JSON.stringify({
