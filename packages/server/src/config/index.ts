@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import { resolve } from 'path';
+
+// Load server.env file if it exists (for local development or pm2 deployments)
+const envPath = resolve(process.cwd(), 'server.env');
+dotenv.config({ path: envPath });
 
 const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -14,6 +20,9 @@ const configSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   SERVER_ID: z.string().default('server-1'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  // TURN server configuration (optional but recommended for mobile cellular networks)
+  CLOUD_DOCK_TURN_URLS: z.string().optional(),
+  CLOUD_DOCK_TURN_SECRET: z.string().optional(),
 });
 
 const parsed = configSchema.safeParse(process.env);

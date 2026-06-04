@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { config } from '../config/index.js';
 
 export interface TurnServerConfig {
   urls: string | string[];
@@ -58,8 +59,8 @@ export function generateTurnCredentials(
  * If TURN is not configured, returns empty array.
  */
 export function buildTurnServersFromEnv(): TurnServerConfig[] {
-  const turnUrlsEnv = process.env.CLOUD_DOCK_TURN_URLS;
-  const turnSecret = process.env.CLOUD_DOCK_TURN_SECRET;
+  const turnUrlsEnv = config.CLOUD_DOCK_TURN_URLS;
+  const turnSecret = config.CLOUD_DOCK_TURN_SECRET;
 
   if (!turnUrlsEnv || !turnSecret) {
     return [];
@@ -71,8 +72,8 @@ export function buildTurnServersFromEnv(): TurnServerConfig[] {
       return [];
     }
 
-    const config = generateTurnCredentials(urls, turnSecret);
-    return [config];
+    const turnConfig = generateTurnCredentials(urls, turnSecret);
+    return [turnConfig];
   } catch (err: any) {
     console.error('[turn] Failed to build TURN servers from env:', err.message);
     return [];
