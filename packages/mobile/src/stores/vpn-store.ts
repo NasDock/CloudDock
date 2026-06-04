@@ -54,11 +54,18 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         throw new Error('VPN permission not granted');
       }
 
+      // Include common private subnets so iOS can route to NAS LAN devices.
+      // iOS does not support dynamic route updates, so we must declare them upfront.
       await startVPN({
         tunnelAddress: get().virtualIp,
         subnetMask: '255.255.255.0',
         mtu: 1280,
-        routes: ['100.64.0.0/24'],
+        routes: [
+          '100.64.0.0/24',   // VPN mesh subnet
+          '192.168.0.0/16',  // Common home LAN
+          '10.0.0.0/8',      // Common corporate LAN
+          '172.16.0.0/12',   // Docker / other private
+        ],
         dnsServers: ['8.8.8.8', '1.1.1.1'],
       });
 
