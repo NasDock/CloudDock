@@ -85,7 +85,14 @@ export class WebRTCManager {
   async sendProxyData(streamId: string, data: Buffer): Promise<boolean> {
     if (!this.ready || !this.dataChannel) return false;
     try {
-      this.dataChannel.send(JSON.stringify({ type: 'proxy_data', streamId, data: data.toString('base64') }));
+      // Binary frame: 1 byte type (0x01) + 2 bytes streamId length (big-endian) + streamId utf-8 + payload
+      const idBytes = Buffer.from(streamId, 'utf-8');
+      const frame = Buffer.allocUnsafe(3 + idBytes.length + data.length);
+      frame.writeUInt8(0x01, 0);
+      frame.writeUInt16BE(idBytes.length, 1);
+      idBytes.copy(frame, 3);
+      data.copy(frame, 3 + idBytes.length);
+      this.dataChannel.send(frame);
       return true;
     } catch (err) {
       console.warn('[webrtc] proxy data send failed', err);
@@ -216,6 +223,7 @@ export class WebRTCManager {
     };
 
     this.dataChannel = this.pc.createDataChannel('data');
+    this.dataChannel.binaryType = 'arraybuffer';
     this.dataChannel.onopen = () => {
       this.ready = true;
       this.clearConnectTimer();
@@ -225,6 +233,12 @@ export class WebRTCManager {
       this.ready = false;
     };
     this.dataChannel.onmessage = (evt: any) => {
+      // Binary frame: proxy data (avoids base64 overhead)
+      if (evt.data instanceof ArrayBuffer) {
+        this.handleBinaryMessage(evt.data);
+        return;
+      }
+      // Text frame: JSON control messages
       const text = String(evt.data || '');
       if (!text) return;
       try {
@@ -247,15 +261,6 @@ export class WebRTCManager {
             this.onProxyConnectReceived?.({ streamId: msg.streamId, host: msg.host, port: msg.port });
             break;
           }
-          case 'proxy_data': {
-            try {
-              const data = Buffer.from(msg.data, 'base64');
-              this.onProxyDataReceived?.({ streamId: msg.streamId, data });
-            } catch {
-              // ignore
-            }
-            break;
-          }
           case 'proxy_close': {
             this.onProxyCloseReceived?.({ streamId: msg.streamId });
             break;
@@ -267,6 +272,22 @@ export class WebRTCManager {
         }
       } catch {}
     };
+  }
+
+  private handleBinaryMessage(buffer: ArrayBuffer): void {
+    const view = new DataView(buffer);
+    const msgType = view.getUint8(0);
+    if (msgType === 0x01) {
+      // proxy_data
+      const idLen = view.getUint16(1, false); // big-endian
+      const idOffset = 3;
+      const dataOffset = idOffset + idLen;
+      if (buffer.byteLength < dataOffset) return;
+      const idBytes = new Uint8Array(buffer, idOffset, idLen);
+      const streamId = new TextDecoder().decode(idBytes);
+      const data = Buffer.from(buffer.slice(dataOffset));
+      this.onProxyDataReceived?.({ streamId, data });
+    }
   }
 
   private async startAsCaller(): Promise<void> {

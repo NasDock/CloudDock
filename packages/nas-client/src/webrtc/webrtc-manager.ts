@@ -124,7 +124,14 @@ export class WebRTCManager {
     const peer = this.peers.get(peerId);
     if (!peer?.ready || !peer.dataChannel) return false;
     try {
-      peer.dataChannel.send(JSON.stringify({ type: 'proxy_data', streamId, data: data.toString('base64') }));
+      // Binary frame: 1 byte type (0x01) + 2 bytes streamId length (big-endian) + streamId utf-8 + payload
+      const idBytes = Buffer.from(streamId, 'utf-8');
+      const frame = Buffer.allocUnsafe(3 + idBytes.length + data.length);
+      frame.writeUInt8(0x01, 0);
+      frame.writeUInt16BE(idBytes.length, 1);
+      idBytes.copy(frame, 3);
+      data.copy(frame, 3 + idBytes.length);
+      peer.dataChannel.send(frame);
       return true;
     } catch (err) {
       logger.warn('WebRTC proxy data send failed', { peerId, streamId, err });
@@ -353,6 +360,11 @@ export class WebRTCManager {
         peer.ready = false;
       };
       peer.dataChannel.onmessage = (evt: any) => {
+        // Binary frame: proxy data (avoids base64 overhead)
+        if (evt.data instanceof ArrayBuffer) {
+          this.handleBinaryMessage(peerId, evt.data);
+          return;
+        }
         const data = String(evt.data || '');
         if (!data) return;
         try {
@@ -390,6 +402,22 @@ export class WebRTCManager {
     };
 
     return peer;
+  }
+
+  private handleBinaryMessage(peerId: string, buffer: ArrayBuffer): void {
+    const view = new DataView(buffer);
+    const msgType = view.getUint8(0);
+    if (msgType === 0x01) {
+      // proxy_data
+      const idLen = view.getUint16(1, false); // big-endian
+      const idOffset = 3;
+      const dataOffset = idOffset + idLen;
+      if (buffer.byteLength < dataOffset) return;
+      const idBytes = new Uint8Array(buffer, idOffset, idLen);
+      const streamId = new TextDecoder().decode(idBytes);
+      const data = Buffer.from(buffer.slice(dataOffset));
+      this.onProxyDataReceived?.(peerId, { streamId, data });
+    }
   }
 
   private closePeerConnection(peerId?: string): void {

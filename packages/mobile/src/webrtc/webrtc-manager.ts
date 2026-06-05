@@ -105,7 +105,15 @@ export class WebRTCManager {
   async sendProxyData(streamId: string, data: ArrayBuffer): Promise<boolean> {
     if (!this.ready || !this.dataChannel) return false;
     try {
-      this.dataChannel.send(JSON.stringify({ type: 'proxy_data', streamId, data: fromByteArray(new Uint8Array(data)) }));
+      // Binary frame: 1 byte type (0x01) + 2 bytes streamId length (big-endian) + streamId utf-8 + payload
+      const idBytes = new TextEncoder().encode(streamId);
+      const frame = new Uint8Array(3 + idBytes.length + data.byteLength);
+      const view = new DataView(frame.buffer);
+      view.setUint8(0, 0x01);
+      view.setUint16(1, idBytes.length, false); // big-endian
+      frame.set(idBytes, 3);
+      frame.set(new Uint8Array(data), 3 + idBytes.length);
+      this.dataChannel.send(frame.buffer.slice(frame.byteOffset, frame.byteOffset + frame.byteLength));
       return true;
     } catch (err) {
       console.warn('[webrtc] proxy data send failed', err);
@@ -265,6 +273,11 @@ export class WebRTCManager {
       this.ready = false;
     };
     this.dataChannel.onmessage = (evt: any) => {
+      // Binary frame: proxy data (avoids base64 overhead)
+      if (evt.data instanceof ArrayBuffer) {
+        this.handleBinaryMessage(evt.data);
+        return;
+      }
       const text = String(evt.data || '');
       if (!text) return;
       try {
@@ -307,6 +320,22 @@ export class WebRTCManager {
     };
 
 
+  }
+
+  private handleBinaryMessage(buffer: ArrayBuffer): void {
+    const view = new DataView(buffer);
+    const msgType = view.getUint8(0);
+    if (msgType === 0x01) {
+      // proxy_data
+      const idLen = view.getUint16(1, false); // big-endian
+      const idOffset = 3;
+      const dataOffset = idOffset + idLen;
+      if (buffer.byteLength < dataOffset) return;
+      const idBytes = new Uint8Array(buffer, idOffset, idLen);
+      const streamId = new TextDecoder().decode(idBytes);
+      const data = buffer.slice(dataOffset);
+      this.onProxyDataReceived?.({ streamId, data });
+    }
   }
 
   private async startAsCaller(): Promise<void> {

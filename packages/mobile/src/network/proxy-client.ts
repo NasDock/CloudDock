@@ -1,5 +1,3 @@
-import { EventEmitter } from 'events';
-
 export interface ProxyClientConfig {
   onProxyConnect: (streamId: string, host: string, port: number) => void;
   onProxyData: (streamId: string, data: ArrayBuffer) => void;
@@ -12,6 +10,8 @@ interface ProxyStream {
   port: number;
 }
 
+type ProxyClientListener = (streamId: string, data?: ArrayBuffer) => void;
+
 /**
  * ProxyClient for Mobile.
  * Since mobile uses the OS VPN API, we intercept packets at the native layer
@@ -19,13 +19,14 @@ interface ProxyStream {
  *
  * This is a stub that coordinates with the native VPN module.
  * The actual socket handling happens in the native code.
+ *
+ * Note: Avoids Node's `events` module so Metro doesn't need polyfills.
  */
-export class ProxyClient extends EventEmitter {
+export class ProxyClient {
   private streams = new Map<string, ProxyStream>();
+  private listeners = new Map<string, Set<ProxyClientListener>>();
 
-  constructor(private config: ProxyClientConfig) {
-    super();
-  }
+  constructor(private config: ProxyClientConfig) {}
 
   /**
    * Called by the native VPN module when a TCP connection is initiated.
@@ -73,10 +74,28 @@ export class ProxyClient extends EventEmitter {
     this.emit('close', streamId);
   }
 
+  on(event: string, listener: ProxyClientListener): void {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+    set.add(listener);
+  }
+
+  off(event: string, listener: ProxyClientListener): void {
+    this.listeners.get(event)?.delete(listener);
+  }
+
+  private emit(event: string, streamId: string, data?: ArrayBuffer): void {
+    this.listeners.get(event)?.forEach((listener) => listener(streamId, data));
+  }
+
   closeAll(): void {
     for (const streamId of this.streams.keys()) {
       this.config.onProxyClose(streamId);
     }
     this.streams.clear();
+    this.listeners.clear();
   }
 }

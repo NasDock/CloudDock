@@ -57,7 +57,8 @@ export interface WebRTCProxyConnect {
 export interface WebRTCProxyData {
   type: 'proxy_data';
   streamId: string;
-  // base64-encoded chunk of TCP stream data
+  // base64-encoded chunk of TCP stream data (legacy text frame)
+  // New binary frame format: 1 byte type (0x01) + 2 bytes streamId length (big-endian) + streamId utf-8 + payload
   data: string;
 }
 
