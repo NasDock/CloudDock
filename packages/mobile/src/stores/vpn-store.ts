@@ -10,11 +10,19 @@ import {
 } from '../native/vpn';
 import {
   sendIPPacket,
+  sendProxyConnect,
+  sendProxyData,
+  sendProxyClose,
   setIPPacketHandler,
+  setProxyConnectHandler,
+  setProxyDataHandler,
+  setProxyCloseHandler,
+  setProxyErrorHandler,
   setConnectionStateHandler,
   setVPNControlHandler,
   isWebRTCReady,
 } from '../webrtc';
+import { ProxyClient } from '../network/proxy-client';
 
 export type VPNStatus = 'idle' | 'connecting' | 'connected' | 'failed';
 
@@ -69,7 +77,52 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         dnsServers: ['8.8.8.8', '1.1.1.1'],
       });
 
-      // Setup packet routing: VPN → WebRTC
+      // Create proxy client for new proxy mode
+      const proxyClient = new ProxyClient({
+        onProxyConnect: (streamId, host, port) => {
+          sendProxyConnect(streamId, host, port);
+        },
+        onProxyData: (streamId, data) => {
+          sendProxyData(streamId, data);
+        },
+        onProxyClose: (streamId) => {
+          sendProxyClose(streamId);
+        },
+      });
+
+      // Wire proxy client events back to native VPN
+      proxyClient.on('data', (streamId: string, data: ArrayBuffer) => {
+        // Forward data from NAS back to native VPN
+        const bytes = new Uint8Array(data);
+        let binaryString = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binaryString += String.fromCharCode(bytes[i] ?? 0);
+        }
+        const base64 = btoa(binaryString);
+        sendVPNPacket(base64).catch(() => {});
+      });
+
+      proxyClient.on('close', (streamId: string) => {
+        // Stream closed by NAS
+      });
+
+      // Setup WebRTC proxy handlers
+      setProxyConnectHandler((msg) => {
+        // NAS confirms connection (or we could initiate from mobile side)
+        // For now, mobile initiates via native VPN events
+      });
+      setProxyDataHandler((msg) => {
+        proxyClient.handleRemoteData(msg.streamId, msg.data);
+      });
+      setProxyCloseHandler((msg) => {
+        proxyClient.handleRemoteClose(msg.streamId);
+      });
+      setProxyErrorHandler((msg) => {
+        console.warn('[vpn] Proxy error from NAS', msg.streamId, msg.message);
+        proxyClient.handleRemoteClose(msg.streamId);
+      });
+
+      // Legacy: Setup packet routing: VPN → WebRTC (IP packet mode)
       const unsubscribePacket = addVPNPacketListener((packetBase64) => {
         const state = get();
         const packetSize = Math.ceil(packetBase64.length * 0.75); // approximate base64 decoded size
@@ -97,7 +150,7 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         }
       });
 
-      // Setup packet routing: WebRTC → VPN
+      // Legacy: Setup packet routing: WebRTC → VPN
       setIPPacketHandler((packet) => {
         const state = get();
         set({
@@ -171,6 +224,7 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         if (vpnStatus === 'disconnected') {
           unsubscribePacket();
           unsubscribeStatus();
+          proxyClient.closeAll();
           set({ status: 'idle' });
         }
       });

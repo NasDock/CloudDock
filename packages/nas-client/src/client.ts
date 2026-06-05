@@ -6,6 +6,7 @@ import { WebSocket } from 'ws';
 import { HealthCheck } from './modules/health-check.js';
 import { TunnelManager } from './modules/tunnel-manager.js';
 import type { VPNGateway } from './modules/vpn-gateway.js';
+import type { ProxyServer } from './modules/proxy-server.js';
 import { loadConfig, saveConfig, type NASConfig } from './utils/config-store.js';
 import { resolveLocalSubnets } from './utils/local-subnets.js';
 import { logger } from './utils/logger.js';
@@ -44,6 +45,7 @@ export class NASClient extends EventEmitter {
   private deviceId?: string;
   private webrtcManager?: WebRTCManager;
   private vpnGateway?: VPNGateway;
+  private proxyServer?: ProxyServer;
   private localSubnets: string[] = resolveLocalSubnets();
   private pendingPairingResolve?: (key: string) => void;
   private pendingPairingReject?: (err: Error) => void;
@@ -215,7 +217,9 @@ export class NASClient extends EventEmitter {
   }
 
   private async startNetworkServices(): Promise<void> {
-    await this.startVPNGateway();
+    // VPN Gateway (TUN mode) is disabled by default to avoid TCP over TCP issues.
+    // Use WebRTC proxy mode instead. Uncomment to re-enable legacy TUN mode.
+    // await this.startVPNGateway();
     await this.startWebRTCSignal();
   }
 
@@ -272,7 +276,7 @@ export class NASClient extends EventEmitter {
       localSubnets: this.vpnGateway ? this.localSubnets : undefined,
     });
 
-    // Wire VPN gateway ↔ WebRTC data channel
+    // Wire VPN gateway ↔ WebRTC data channel (legacy TUN mode)
     this.webrtcManager.onIPPacketReceived = (packet) => {
       if (!this.vpnGateway) {
         logger.warn('Received IP packet from WebRTC but no VPN gateway available', {
@@ -282,6 +286,38 @@ export class NASClient extends EventEmitter {
       }
       this.vpnGateway.sendPacket(packet);
     };
+
+    // Wire Proxy Server ↔ WebRTC data channel (new proxy mode)
+    const proxyModule = await import('./modules/proxy-server.js').catch(() => undefined);
+    if (proxyModule) {
+      this.proxyServer = new proxyModule.ProxyServer({
+        onProxyConnect: (peerId, streamId) => {
+          // Connection opened — nothing extra needed here
+        },
+        onProxyData: (peerId, streamId, data) => {
+          // Data from local TCP socket → send to peer via WebRTC
+          this.webrtcManager?.sendProxyData(peerId, streamId, data).catch(() => {});
+        },
+        onProxyClose: (peerId, streamId) => {
+          // Local TCP socket closed → notify peer
+          this.webrtcManager?.sendProxyClose(peerId, streamId).catch(() => {});
+        },
+      });
+
+      this.webrtcManager.onProxyConnectReceived = (peerId, msg) => {
+        this.proxyServer?.handleConnect(peerId, msg.streamId, msg.host, msg.port);
+      };
+      this.webrtcManager.onProxyDataReceived = (peerId, msg) => {
+        this.proxyServer?.handleData(peerId, msg.streamId, msg.data);
+      };
+      this.webrtcManager.onProxyCloseReceived = (peerId, msg) => {
+        this.proxyServer?.handleClose(peerId, msg.streamId);
+      };
+      this.webrtcManager.onProxyErrorReceived = (peerId, msg) => {
+        logger.warn('Proxy error from peer', { peerId, streamId: msg.streamId, message: msg.message });
+        this.proxyServer?.closeStream(msg.streamId);
+      };
+    }
 
     this.webrtcManager.start().catch((err) => {
       logger.warn('WebRTC manager failed to start, fallback to tunnel', { error: err?.message || err });

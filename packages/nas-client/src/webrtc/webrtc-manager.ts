@@ -36,9 +36,15 @@ export class WebRTCManager {
   private connectTimer?: ReturnType<typeof setTimeout>;
   private readonly connectTimeoutMs = 15000;
 
-  // VPN packet callbacks
+  // VPN packet callbacks (legacy TUN mode — deprecated)
   onIPPacketReceived?: (packet: Buffer) => void;
   onVPNControlReceived?: (msg: any) => void;
+
+  // Proxy stream callbacks (new mode: TCP over WebRTC)
+  onProxyConnectReceived?: (peerId: string, msg: { streamId: string; host: string; port: number }) => void;
+  onProxyDataReceived?: (peerId: string, msg: { streamId: string; data: Buffer }) => void;
+  onProxyCloseReceived?: (peerId: string, msg: { streamId: string }) => void;
+  onProxyErrorReceived?: (peerId: string, msg: { streamId: string; message: string }) => void;
 
   constructor(options: WebRTCManagerOptions) {
     this.options = options;
@@ -99,6 +105,55 @@ export class WebRTCManager {
       }
     }
     return sent;
+  }
+
+  // Proxy stream methods (new mode)
+  async sendProxyConnect(peerId: string, streamId: string, host: string, port: number): Promise<boolean> {
+    const peer = this.peers.get(peerId);
+    if (!peer?.ready || !peer.dataChannel) return false;
+    try {
+      peer.dataChannel.send(JSON.stringify({ type: 'proxy_connect', streamId, host, port }));
+      return true;
+    } catch (err) {
+      logger.warn('WebRTC proxy connect send failed', { peerId, streamId, err });
+      return false;
+    }
+  }
+
+  async sendProxyData(peerId: string, streamId: string, data: Buffer): Promise<boolean> {
+    const peer = this.peers.get(peerId);
+    if (!peer?.ready || !peer.dataChannel) return false;
+    try {
+      peer.dataChannel.send(JSON.stringify({ type: 'proxy_data', streamId, data: data.toString('base64') }));
+      return true;
+    } catch (err) {
+      logger.warn('WebRTC proxy data send failed', { peerId, streamId, err });
+      return false;
+    }
+  }
+
+  async sendProxyClose(peerId: string, streamId: string): Promise<boolean> {
+    const peer = this.peers.get(peerId);
+    if (!peer?.ready || !peer.dataChannel) return false;
+    try {
+      peer.dataChannel.send(JSON.stringify({ type: 'proxy_close', streamId }));
+      return true;
+    } catch (err) {
+      logger.warn('WebRTC proxy close send failed', { peerId, streamId, err });
+      return false;
+    }
+  }
+
+  async sendProxyError(peerId: string, streamId: string, message: string): Promise<boolean> {
+    const peer = this.peers.get(peerId);
+    if (!peer?.ready || !peer.dataChannel) return false;
+    try {
+      peer.dataChannel.send(JSON.stringify({ type: 'proxy_error', streamId, message }));
+      return true;
+    } catch (err) {
+      logger.warn('WebRTC proxy error send failed', { peerId, streamId, err });
+      return false;
+    }
   }
 
   async sendFile(buffer: Buffer, meta: Omit<WebRTCFileMeta, 'size' | 'chunkSize' | 'chunkCount'>): Promise<boolean> {
@@ -314,6 +369,19 @@ export class WebRTCManager {
             }
           } else if (msgType === 'vpn_control') {
             this.onVPNControlReceived?.(msg);
+          } else if (msgType === 'proxy_connect') {
+            this.onProxyConnectReceived?.(peerId, { streamId: msg.streamId, host: msg.host, port: msg.port });
+          } else if (msgType === 'proxy_data' && msg.data) {
+            try {
+              const buf = Buffer.from(msg.data, 'base64');
+              this.onProxyDataReceived?.(peerId, { streamId: msg.streamId, data: buf });
+            } catch {
+              // ignore invalid proxy data
+            }
+          } else if (msgType === 'proxy_close') {
+            this.onProxyCloseReceived?.(peerId, { streamId: msg.streamId });
+          } else if (msgType === 'proxy_error') {
+            this.onProxyErrorReceived?.(peerId, { streamId: msg.streamId, message: msg.message });
           }
         } catch {
           // ignore

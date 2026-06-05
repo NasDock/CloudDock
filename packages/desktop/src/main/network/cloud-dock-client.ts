@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { WebRTCManager } from './webrtc-manager';
+import { ProxyClient } from './proxy-client';
 import { createVPNEngine, VPNEngine, VPNConfig } from '../vpn/vpn-engine';
 import { configStore, desktopDeviceId, desktopDeviceName, desktopDevicePlatform } from '../stores/desktop-config';
 
@@ -15,6 +16,7 @@ interface NASClient {
 export class CloudDockDesktopClient {
   private vpnEngine: VPNEngine;
   private webrtcManager?: WebRTCManager | undefined;
+  private proxyClient?: ProxyClient | undefined;
   private status: VPNStatus = 'idle';
   private virtualIp = '100.64.0.3';
   private nasVirtualIp = '100.64.0.1';
@@ -28,6 +30,11 @@ export class CloudDockDesktopClient {
     this.vpnEngine.onPacketReceived = (packet) => {
       this.handleVPNPacket(packet);
     };
+  }
+
+  getProxyPort(): number | undefined {
+    // TODO: return actual proxy port once ProxyClient.start() resolves
+    return undefined;
   }
 
   getVPNStatus(): VPNStatus {
@@ -45,14 +52,16 @@ export class CloudDockDesktopClient {
     this.onVPNStatusChange?.();
 
     try {
-      const config: VPNConfig = {
-        address: this.virtualIp,
-        subnetMask: '255.255.255.0',
-        mtu: 1280,
-        routes: ['100.64.0.0/24'],
-        dnsServers: ['8.8.8.8', '1.1.1.1'],
-      };
-      await this.vpnEngine.start(config);
+      // VPN Engine (TUN mode) is disabled by default to avoid TCP over TCP issues.
+      // Use WebRTC proxy mode instead. Uncomment to re-enable legacy TUN mode.
+      // const config: VPNConfig = {
+      //   address: this.virtualIp,
+      //   subnetMask: '255.255.255.0',
+      //   mtu: 1280,
+      //   routes: ['100.64.0.0/24'],
+      //   dnsServers: ['8.8.8.8', '1.1.1.1'],
+      // };
+      // await this.vpnEngine.start(config);
 
       const token = configStore.get('accessToken');
       if (!token) {
@@ -75,8 +84,40 @@ export class CloudDockDesktopClient {
 
       this.webrtcManager = new WebRTCManager({ serverUrl, deviceId, token });
 
+      // Legacy TUN mode callbacks
+      // Legacy TUN mode callbacks (disabled)
       this.webrtcManager.onIPPacketReceived = (packet) => {
-        this.vpnEngine.sendPacket(packet);
+        // TUN mode disabled — use proxy mode instead
+        // this.vpnEngine.sendPacket(packet);
+      };
+
+      // New proxy mode callbacks
+      this.proxyClient = new ProxyClient({
+        onProxyConnect: (streamId, host, port) => {
+          this.webrtcManager?.sendProxyConnect(streamId, host, port).catch(() => {});
+        },
+        onProxyData: (streamId, data) => {
+          this.webrtcManager?.sendProxyData(streamId, data).catch(() => {});
+        },
+        onProxyClose: (streamId) => {
+          this.webrtcManager?.sendProxyClose(streamId).catch(() => {});
+        },
+      });
+      this.proxyClient.start().then((port) => {
+        console.info('[desktop] Proxy client listening on 127.0.0.1:' + port);
+      }).catch((err) => {
+        console.warn('[desktop] Proxy client failed to start', err);
+      });
+
+      this.webrtcManager.onProxyDataReceived = (msg) => {
+        this.proxyClient?.handleRemoteData(msg.streamId, msg.data);
+      };
+      this.webrtcManager.onProxyCloseReceived = (msg) => {
+        this.proxyClient?.handleRemoteClose(msg.streamId);
+      };
+      this.webrtcManager.onProxyErrorReceived = (msg) => {
+        console.warn('[desktop] Proxy error from NAS', msg.streamId, msg.message);
+        this.proxyClient?.handleRemoteClose(msg.streamId);
       };
 
       this.webrtcManager.onConnectionStateChange = (state) => {
@@ -112,9 +153,12 @@ export class CloudDockDesktopClient {
       this.statsTimer = undefined;
     }
     this.status = 'idle';
+    this.proxyClient?.stop();
+    this.proxyClient = undefined;
     this.webrtcManager?.close();
     this.webrtcManager = undefined;
-    await this.vpnEngine.stop();
+    // TUN mode disabled
+    // await this.vpnEngine.stop();
     this.onVPNStatusChange?.();
   }
 
@@ -149,13 +193,8 @@ export class CloudDockDesktopClient {
     }
   }
 
-  private handleVPNPacket(packet: Buffer): void {
-    if (this.webrtcManager?.isReady()) {
-      this.webrtcManager.sendIPPacket(packet).catch(() => {});
-    } else {
-      // Soft degradation: drop packets when P2P is not ready
-      // Phase 5: fallback to WebSocket tunnel binary mode (not yet implemented)
-    }
+  private handleVPNPacket(_packet: Buffer): void {
+    // TUN mode disabled — use proxy mode instead
   }
 
   dispose(): void {

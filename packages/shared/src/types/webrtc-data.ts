@@ -1,6 +1,6 @@
 // WebRTC data channel payloads for large data transfer
 
-export type WebRTCDataType = 'file_chunk' | 'file_complete' | 'file_error' | 'ip_packet' | 'vpn_control';
+export type WebRTCDataType = 'file_chunk' | 'file_complete' | 'file_error' | 'ip_packet' | 'vpn_control' | 'proxy_connect' | 'proxy_data' | 'proxy_close' | 'proxy_error';
 
 export interface WebRTCFileMeta {
   transferId: string;
@@ -46,6 +46,32 @@ export interface WebRTCVPNControl {
   payload?: unknown;
 }
 
+// Proxy stream messages (TCP over WebRTC DataChannel, replaces TUN/IP packet mode)
+export interface WebRTCProxyConnect {
+  type: 'proxy_connect';
+  streamId: string;
+  host: string;
+  port: number;
+}
+
+export interface WebRTCProxyData {
+  type: 'proxy_data';
+  streamId: string;
+  // base64-encoded chunk of TCP stream data
+  data: string;
+}
+
+export interface WebRTCProxyClose {
+  type: 'proxy_close';
+  streamId: string;
+}
+
+export interface WebRTCProxyError {
+  type: 'proxy_error';
+  streamId: string;
+  message: string;
+}
+
 // TURN server configuration for WebRTC ICE
 export interface TurnServerConfig {
   urls: string | string[];
@@ -53,5 +79,14 @@ export interface TurnServerConfig {
   credential?: string;
 }
 
-export type WebRTCDataMessage = WebRTCFileChunk | WebRTCFileComplete | WebRTCFileError | WebRTCIPPacket | WebRTCVPNControl;
+export type WebRTCDataMessage =
+  | WebRTCFileChunk
+  | WebRTCFileComplete
+  | WebRTCFileError
+  | WebRTCIPPacket
+  | WebRTCVPNControl
+  | WebRTCProxyConnect
+  | WebRTCProxyData
+  | WebRTCProxyClose
+  | WebRTCProxyError;
 

@@ -35,10 +35,16 @@ export class WebRTCManager {
   private connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   private readonly connectTimeoutMs = 30000;
 
-  // VPN packet callbacks
+  // VPN packet callbacks (legacy TUN mode — deprecated)
   onIPPacketReceived?: (packet: ArrayBuffer) => void;
   onVPNControlReceived?: (msg: any) => void;
   onConnectionStateChange?: (state: 'connected' | 'failed' | 'disconnected' | 'closed') => void;
+
+  // Proxy stream callbacks (new mode: TCP over WebRTC)
+  onProxyConnectReceived?: (msg: { streamId: string; host: string; port: number }) => void;
+  onProxyDataReceived?: (msg: { streamId: string; data: ArrayBuffer }) => void;
+  onProxyCloseReceived?: (msg: { streamId: string }) => void;
+  onProxyErrorReceived?: (msg: { streamId: string; message: string }) => void;
 
   constructor(options: WebRTCManagerOptions) {
     this.options = options;
@@ -80,6 +86,51 @@ export class WebRTCManager {
       return true;
     } catch (err) {
       console.warn('[webrtc] ip packet send failed', err);
+      return false;
+    }
+  }
+
+  // Proxy stream methods (new mode)
+  async sendProxyConnect(streamId: string, host: string, port: number): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      this.dataChannel.send(JSON.stringify({ type: 'proxy_connect', streamId, host, port }));
+      return true;
+    } catch (err) {
+      console.warn('[webrtc] proxy connect send failed', err);
+      return false;
+    }
+  }
+
+  async sendProxyData(streamId: string, data: ArrayBuffer): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      this.dataChannel.send(JSON.stringify({ type: 'proxy_data', streamId, data: fromByteArray(new Uint8Array(data)) }));
+      return true;
+    } catch (err) {
+      console.warn('[webrtc] proxy data send failed', err);
+      return false;
+    }
+  }
+
+  async sendProxyClose(streamId: string): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      this.dataChannel.send(JSON.stringify({ type: 'proxy_close', streamId }));
+      return true;
+    } catch (err) {
+      console.warn('[webrtc] proxy close send failed', err);
+      return false;
+    }
+  }
+
+  async sendProxyError(streamId: string, message: string): Promise<boolean> {
+    if (!this.ready || !this.dataChannel) return false;
+    try {
+      this.dataChannel.send(JSON.stringify({ type: 'proxy_error', streamId, message }));
+      return true;
+    } catch (err) {
+      console.warn('[webrtc] proxy error send failed', err);
       return false;
     }
   }
@@ -217,35 +268,40 @@ export class WebRTCManager {
       const text = String(evt.data || '');
       if (!text) return;
       try {
-        const msg = JSON.parse(text) as WebRTCDataMessage;
-        switch (msg.type) {
-          case 'file_chunk': {
-            const entry = this.incomingFiles.get(msg.meta.transferId) || { meta: msg.meta, chunks: [] };
-            entry.chunks[msg.index] = msg.data;
-            this.incomingFiles.set(msg.meta.transferId, entry);
-            break;
+        const msg = JSON.parse(text) as any;
+        const msgType = msg?.type as string;
+        if (msgType === 'file_chunk') {
+          const entry = this.incomingFiles.get(msg.meta.transferId) || { meta: msg.meta, chunks: [] };
+          entry.chunks[msg.index] = msg.data;
+          this.incomingFiles.set(msg.meta.transferId, entry);
+        } else if (msgType === 'file_complete') {
+          const entry = this.incomingFiles.get(msg.meta.transferId);
+          if (entry) {
+            console.info('[webrtc] file received', { transferId: msg.meta.transferId });
+            this.incomingFiles.delete(msg.meta.transferId);
           }
-          case 'file_complete': {
-            const entry = this.incomingFiles.get(msg.meta.transferId);
-            if (entry) {
-              console.info('[webrtc] file received', { transferId: msg.meta.transferId });
-              this.incomingFiles.delete(msg.meta.transferId);
-            }
-            break;
+        } else if (msgType === 'ip_packet') {
+          try {
+            const packet = toByteArray(msg.data);
+            this.onIPPacketReceived?.(packet.buffer.slice(packet.byteOffset, packet.byteOffset + packet.byteLength) as ArrayBuffer);
+          } catch {
+            // ignore invalid ip packet
           }
-          case 'ip_packet': {
-            try {
-              const packet = toByteArray(msg.data);
-              this.onIPPacketReceived?.(packet.buffer.slice(packet.byteOffset, packet.byteOffset + packet.byteLength) as ArrayBuffer);
-            } catch {
-              // ignore invalid ip packet
-            }
-            break;
+        } else if (msgType === 'vpn_control') {
+          this.onVPNControlReceived?.(msg);
+        } else if (msgType === 'proxy_connect') {
+          this.onProxyConnectReceived?.({ streamId: msg.streamId, host: msg.host, port: msg.port });
+        } else if (msgType === 'proxy_data') {
+          try {
+            const data = toByteArray(msg.data);
+            this.onProxyDataReceived?.({ streamId: msg.streamId, data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer });
+          } catch {
+            // ignore
           }
-          case 'vpn_control': {
-            this.onVPNControlReceived?.(msg);
-            break;
-          }
+        } else if (msgType === 'proxy_close') {
+          this.onProxyCloseReceived?.({ streamId: msg.streamId });
+        } else if (msgType === 'proxy_error') {
+          this.onProxyErrorReceived?.({ streamId: msg.streamId, message: msg.message });
         }
       } catch {}
     };
