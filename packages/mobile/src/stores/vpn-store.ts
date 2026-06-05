@@ -1,26 +1,25 @@
 import { create } from 'zustand';
 import {
-  startVPN,
-  stopVPN,
-  getVPNStatus,
-  addVPNStatusListener,
-  addProxyConnectListener,
-  addProxyDataListener,
-  addProxyCloseListener,
-  requestVPNPermission,
+    addProxyCloseListener,
+    addProxyConnectListener,
+    addProxyDataListener,
+    addVPNStatusListener,
+    requestVPNPermission,
+    startVPN,
+    stopVPN
 } from '../native/vpn';
-import {
-  sendProxyConnect,
-  sendProxyData,
-  sendProxyClose,
-  setProxyDataHandler,
-  setProxyCloseHandler,
-  setProxyErrorHandler,
-  setConnectionStateHandler,
-  setVPNControlHandler,
-  isWebRTCReady,
-} from '../webrtc';
 import { ProxyClient } from '../network/proxy-client';
+import {
+    isWebRTCReady,
+    sendProxyClose,
+    sendProxyConnect,
+    sendProxyData,
+    setConnectionStateHandler,
+    setProxyCloseHandler,
+    setProxyDataHandler,
+    setProxyErrorHandler,
+    setVPNControlHandler,
+} from '../webrtc';
 
 export type VPNStatus = 'idle' | 'connecting' | 'connected' | 'failed';
 
