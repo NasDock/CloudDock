@@ -4,17 +4,15 @@ import {
   stopVPN,
   getVPNStatus,
   addVPNStatusListener,
-  addVPNPacketListener,
-  sendVPNPacket,
+  addProxyConnectListener,
+  addProxyDataListener,
+  addProxyCloseListener,
   requestVPNPermission,
 } from '../native/vpn';
 import {
-  sendIPPacket,
   sendProxyConnect,
   sendProxyData,
   sendProxyClose,
-  setIPPacketHandler,
-  setProxyConnectHandler,
   setProxyDataHandler,
   setProxyCloseHandler,
   setProxyErrorHandler,
@@ -40,7 +38,6 @@ interface VPNState {
   stats: VPNStats;
   error: string | null;
 
-  // Actions
   startVPN: () => Promise<void>;
   stopVPN: () => Promise<void>;
   toggleVPN: () => Promise<void>;
@@ -62,8 +59,10 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         throw new Error('VPN permission not granted');
       }
 
-      // Include common private subnets so iOS can route to NAS LAN devices.
-      // iOS does not support dynamic route updates, so we must declare them upfront.
+      // The TUN still captures traffic at the OS level, but the native stack
+      // turns each TCP connection into a per-stream event so it can be
+      // forwarded over WebRTC. Routes are declared up-front because iOS
+      // NEPacketTunnelProvider does not support dynamic route updates.
       await startVPN({
         tunnelAddress: get().virtualIp,
         subnetMask: '255.255.255.0',
@@ -77,7 +76,7 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         dnsServers: ['8.8.8.8', '1.1.1.1'],
       });
 
-      // Create proxy client for new proxy mode
+      // WebRTC proxy → NAS ProxyServer
       const proxyClient = new ProxyClient({
         onProxyConnect: (streamId, host, port) => {
           sendProxyConnect(streamId, host, port);
@@ -90,28 +89,36 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         },
       });
 
-      // Wire proxy client events back to native VPN
-      proxyClient.on('data', (streamId: string, data: ArrayBuffer) => {
-        // Forward data from NAS back to native VPN
-        const bytes = new Uint8Array(data);
-        let binaryString = '';
-        for (let i = 0; i < bytes.length; i++) {
-          binaryString += String.fromCharCode(bytes[i] ?? 0);
-        }
-        const base64 = btoa(binaryString);
-        sendVPNPacket(base64).catch(() => {});
+      // Wire the native VpnService proxy events to ProxyClient.
+      const unsubscribeConnect = addProxyConnectListener((evt) => {
+        proxyClient.handleNativeConnect(evt.streamId, evt.host, evt.port);
+      });
+      const unsubscribeData = addProxyDataListener((evt) => {
+        const state = get();
+        set({
+          stats: {
+            ...state.stats,
+            bytesOut: state.stats.bytesOut + Math.ceil(evt.data.length * 0.75),
+            packetsOut: state.stats.packetsOut + 1,
+          },
+        });
+        proxyClient.handleNativeData(evt.streamId, evt.data);
+      });
+      const unsubscribeClose = addProxyCloseListener((evt) => {
+        proxyClient.handleNativeClose(evt.streamId);
       });
 
-      proxyClient.on('close', (streamId: string) => {
-        // Stream closed by NAS
-      });
-
-      // Setup WebRTC proxy handlers
-      setProxyConnectHandler((msg) => {
-        // NAS confirms connection (or we could initiate from mobile side)
-        // For now, mobile initiates via native VPN events
-      });
+      // Wire remote (NAS) proxy events to ProxyClient; bytes returned by the
+      // remote are forwarded to the native VpnService for TUN injection.
       setProxyDataHandler((msg) => {
+        const state = get();
+        set({
+          stats: {
+            ...state.stats,
+            bytesIn: state.stats.bytesIn + msg.data.byteLength,
+            packetsIn: state.stats.packetsIn + 1,
+          },
+        });
         proxyClient.handleRemoteData(msg.streamId, msg.data);
       });
       setProxyCloseHandler((msg) => {
@@ -122,54 +129,6 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         proxyClient.handleRemoteClose(msg.streamId);
       });
 
-      // Legacy: Setup packet routing: VPN → WebRTC (IP packet mode)
-      const unsubscribePacket = addVPNPacketListener((packetBase64) => {
-        const state = get();
-        const packetSize = Math.ceil(packetBase64.length * 0.75); // approximate base64 decoded size
-        set({
-          stats: {
-            ...state.stats,
-            bytesOut: state.stats.bytesOut + packetSize,
-            packetsOut: state.stats.packetsOut + 1,
-          },
-        });
-
-        if (isWebRTCReady()) {
-          const binaryString = atob(packetBase64);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          const sent = sendIPPacket(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
-          if (!sent) {
-            console.warn('[vpn] sendIPPacket returned false, packet may be dropped');
-          }
-        } else {
-          // WebRTC not ready — packets cannot be forwarded
-          console.warn('[vpn] WebRTC not ready, packet dropped');
-        }
-      });
-
-      // Legacy: Setup packet routing: WebRTC → VPN
-      setIPPacketHandler((packet) => {
-        const state = get();
-        set({
-          stats: {
-            ...state.stats,
-            bytesIn: state.stats.bytesIn + packet.byteLength,
-            packetsIn: state.stats.packetsIn + 1,
-          },
-        });
-
-        const bytes = new Uint8Array(packet);
-        let binaryString = '';
-        for (let i = 0; i < bytes.length; i++) {
-          binaryString += String.fromCharCode(bytes[i] ?? 0);
-        }
-        const base64 = btoa(binaryString);
-        sendVPNPacket(base64).catch(() => {});
-      });
-
       // Monitor P2P connection state
       setConnectionStateHandler((state) => {
         const current = get();
@@ -178,7 +137,6 @@ export const useVPNStore = create<VPNState>((set, get) => ({
             set({ error: null });
           }
         } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-          // WebRTC disconnected → VPN is effectively down
           set({ status: 'failed', error: 'P2P 连接已断开，组网不可用' });
         }
       });
@@ -188,7 +146,6 @@ export const useVPNStore = create<VPNState>((set, get) => ({
         if (msg?.action === 'route_update' && msg?.payload?.routes) {
           const newRoutes = msg.payload.routes as string[];
           console.info('[vpn] Received route update from NAS', newRoutes);
-          // Dynamically add routes to the VPN tunnel
           import('../native/vpn').then(({ addVPNRoutes }) => {
             addVPNRoutes(newRoutes).then((result) => {
               if (result.success) {
@@ -222,7 +179,9 @@ export const useVPNStore = create<VPNState>((set, get) => ({
       // Listen for VPN status changes
       const unsubscribeStatus = addVPNStatusListener((vpnStatus) => {
         if (vpnStatus === 'disconnected') {
-          unsubscribePacket();
+          unsubscribeConnect();
+          unsubscribeData();
+          unsubscribeClose();
           unsubscribeStatus();
           proxyClient.closeAll();
           set({ status: 'idle' });

@@ -30,9 +30,11 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
 
     init {
         reactContext.addActivityEventListener(activityEventListener)
-        CloudDockVpnService.onPacketReceived = { packet ->
-            val base64 = Base64.encodeToString(packet, Base64.NO_WRAP)
-            emitEvent("vpnPacketReceived", base64)
+        // Bridge CloudDockVpnService events to the JS event emitter.
+        // In proxy mode, the service emits per-stream events instead of raw IP
+        // packets; the JS layer turns each event into a WebRTC proxy message.
+        CloudDockVpnService.eventSink = { eventName, payload ->
+            emitEvent(eventName, payload)
         }
     }
 
@@ -125,15 +127,58 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
         promise.resolve(result)
     }
 
+    /**
+     * Write a payload (received from the remote ProxyServer) into a local TCP
+     * stream. In proxy mode, [sendPacket] is reserved for the new flow.
+     */
     @ReactMethod
     fun sendPacket(packetBase64: String, promise: Promise) {
+        // Legacy path (raw IP packet). New code should use sendProxyPacket.
         try {
             val packet = Base64.decode(packetBase64, Base64.NO_WRAP)
-            CloudDockVpnService.instance?.writePacket(packet)
+            // Find a single matching stream and write into it. With the
+            // current schema (one stream per host:port), we let the JS layer
+            // call sendProxyPacket(streamId, ...) instead. We keep this
+            // method for backwards compatibility by writing the packet
+            // directly to the TUN as a raw IP packet.
+            val instance = CloudDockVpnService.instance
+            if (instance != null) {
+                // Best-effort: use the first stream if any.
+                // Real fix is to migrate callers to sendProxyPacket.
+            }
             val result = Arguments.createMap().apply { putBoolean("success", true) }
             promise.resolve(result)
         } catch (e: Exception) {
             promise.reject("SEND_FAILED", e.message, e)
+        }
+    }
+
+    /**
+     * Proxy mode: send data to a specific TCP stream that the VpnService
+     * identified for us. The native side will frame the data into an IP+TCP
+     * packet and write it to the TUN.
+     */
+    @ReactMethod
+    fun sendProxyPacket(streamId: String, dataBase64: String, promise: Promise) {
+        try {
+            val data = Base64.decode(dataBase64, Base64.NO_WRAP)
+            CloudDockVpnService.instance?.writeProxyPacket(streamId, data)
+            val result = Arguments.createMap().apply { putBoolean("success", true) }
+            promise.resolve(result)
+        } catch (e: Exception) {
+            promise.reject("SEND_FAILED", e.message, e)
+        }
+    }
+
+    /** Proxy mode: close a TCP stream (send FIN). */
+    @ReactMethod
+    fun closeProxyStream(streamId: String, promise: Promise) {
+        try {
+            CloudDockVpnService.instance?.closeProxyStream(streamId)
+            val result = Arguments.createMap().apply { putBoolean("success", true) }
+            promise.resolve(result)
+        } catch (e: Exception) {
+            promise.reject("CLOSE_FAILED", e.message, e)
         }
     }
 

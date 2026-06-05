@@ -14,11 +14,16 @@ type ProxyClientListener = (streamId: string, data?: ArrayBuffer) => void;
 
 /**
  * ProxyClient for Mobile.
- * Since mobile uses the OS VPN API, we intercept packets at the native layer
- * and route TCP connections through WebRTC proxy streams.
  *
- * This is a stub that coordinates with the native VPN module.
- * The actual socket handling happens in the native code.
+ * In proxy mode the OS VPN API captures every TCP connection attempt as an
+ * IP/TCP SYN packet. The native VpnService parses those packets and emits
+ * per-stream events (`vpnProxyConnect`, `vpnProxyData`, `vpnProxyClose`).
+ * This class wires those native events to the WebRTC proxy stream API:
+ *   - "remote (NAS) → local (app)": onProxyData from WebRTC →
+ *     sendProxyPacket to native → native frames the data into IP+TCP and
+ *     writes to the TUN, completing the local TCP stream.
+ *   - "local (app) → remote (NAS)": native emits a proxy data event →
+ *     onProxyData to WebRTC → forwarded to the NAS.
  *
  * Note: Avoids Node's `events` module so Metro doesn't need polyfills.
  */
@@ -29,26 +34,39 @@ export class ProxyClient {
   constructor(private config: ProxyClientConfig) {}
 
   /**
-   * Called by the native VPN module when a TCP connection is initiated.
+   * Called by the native VpnService when a new TCP connection is initiated
+   * (SYN seen). The local 4-tuple is collapsed to a single streamId by the
+   * native stack; we only see the destination (host:port) here.
    */
   handleNativeConnect(streamId: string, host: string, port: number): void {
+    if (this.streams.has(streamId)) {
+      console.warn('[proxy-client] stream already exists', streamId);
+      return;
+    }
     this.streams.set(streamId, { streamId, host, port });
     this.config.onProxyConnect(streamId, host, port);
   }
 
   /**
-   * Called by the native VPN module when data is received from the local app.
+   * Called by the native VpnService with a TCP payload from the local app.
+   * The data is base64-encoded by the native side.
    */
-  handleNativeData(streamId: string, data: ArrayBuffer): void {
+  handleNativeData(streamId: string, dataBase64: string): void {
     if (!this.streams.has(streamId)) {
-      console.warn('[proxy-client] stream not found', streamId);
+      console.warn('[proxy-client] stream not found for native data', streamId);
       return;
     }
-    this.config.onProxyData(streamId, data);
+    const binary = atob(dataBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    this.config.onProxyData(streamId, bytes.buffer);
   }
 
   /**
-   * Called by the native VPN module when the local connection closes.
+   * Called by the native VpnService when the local app closes the TCP
+   * stream (FIN/RST). The remote stream should be torn down.
    */
   handleNativeClose(streamId: string): void {
     this.streams.delete(streamId);
@@ -56,21 +74,39 @@ export class ProxyClient {
   }
 
   /**
-   * Handle data arriving from remote (NAS) for a stream.
+   * Handle data arriving from remote (NAS) for a stream. The remote payload
+   * is forwarded to the native VpnService, which frames it into a TCP
+   * segment and writes it to the TUN.
    */
   handleRemoteData(streamId: string, data: ArrayBuffer): void {
     if (!this.streams.has(streamId)) {
       console.warn('[proxy-client] stream not found for remote data', streamId);
       return;
     }
+    const bytes = new Uint8Array(data);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i] ?? 0);
+    }
+    const base64 = btoa(binary);
+    // Imported lazily to avoid a circular dependency in tests.
+    import('../native/vpn').then(({ sendProxyPacket }) => {
+      sendProxyPacket(streamId, base64).catch((err) => {
+        console.warn('[proxy-client] sendProxyPacket failed', err);
+      });
+    });
     this.emit('data', streamId, data);
   }
 
   /**
-   * Handle remote close for a stream.
+   * Handle remote close for a stream. The local TCP stream is half-closed
+   * (FIN) so the app sees EOF.
    */
   handleRemoteClose(streamId: string): void {
     this.streams.delete(streamId);
+    import('../native/vpn').then(({ closeProxyStream }) => {
+      closeProxyStream(streamId).catch(() => {});
+    });
     this.emit('close', streamId);
   }
 

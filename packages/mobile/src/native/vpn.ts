@@ -21,6 +21,21 @@ export interface VPNConfig {
 
 export type VPNStatus = 'connected' | 'connecting' | 'disconnecting' | 'disconnected' | 'invalid';
 
+export interface ProxyConnectEvent {
+  streamId: string;
+  host: string;
+  port: number;
+}
+
+export interface ProxyDataEvent {
+  streamId: string;
+  data: string; // base64
+}
+
+export interface ProxyCloseEvent {
+  streamId: string;
+}
+
 /**
  * Start the VPN tunnel with the given configuration.
  */
@@ -40,25 +55,26 @@ export async function startVPN(config: VPNConfig): Promise<{ success: boolean }>
   });
 }
 
-/**
- * Stop the VPN tunnel.
- */
 export async function stopVPN(): Promise<{ success: boolean }> {
   return CloudDockVPNBridge.stopVPN();
 }
 
-/**
- * Get the current VPN status.
- */
 export async function getVPNStatus(): Promise<{ status: VPNStatus }> {
   return CloudDockVPNBridge.getStatus();
 }
 
 /**
- * Send a raw IP packet (base64-encoded) to the VPN tunnel.
+ * Proxy mode: write a payload (received from the remote ProxyServer) into
+ * the local TCP stream identified by [streamId]. The native side frames it
+ * into an IP+TCP packet and writes it to the TUN.
  */
-export async function sendVPNPacket(packetBase64: string): Promise<{ success: boolean }> {
-  return CloudDockVPNBridge.sendPacket(packetBase64);
+export async function sendProxyPacket(streamId: string, dataBase64: string): Promise<{ success: boolean }> {
+  return CloudDockVPNBridge.sendProxyPacket(streamId, dataBase64);
+}
+
+/** Proxy mode: close a local TCP stream (send FIN). */
+export async function closeProxyStream(streamId: string): Promise<{ success: boolean }> {
+  return CloudDockVPNBridge.closeProxyStream(streamId);
 }
 
 /**
@@ -75,12 +91,26 @@ export function addVPNStatusListener(callback: (status: VPNStatus) => void): () 
 }
 
 /**
- * Subscribe to incoming VPN packets.
+ * Subscribe to a new TCP stream the VpnService identified (SYN seen).
  */
-export function addVPNPacketListener(callback: (packetBase64: string) => void): () => void {
-  const subscription = eventEmitter.addListener('vpnPacketReceived', (packetBase64: string) => {
-    callback(packetBase64);
-  });
+export function addProxyConnectListener(callback: (event: ProxyConnectEvent) => void): () => void {
+  const subscription = eventEmitter.addListener('vpnProxyConnect', callback);
+  return () => subscription.remove();
+}
+
+/**
+ * Subscribe to data payloads from a local TCP stream.
+ */
+export function addProxyDataListener(callback: (event: ProxyDataEvent) => void): () => void {
+  const subscription = eventEmitter.addListener('vpnProxyData', callback);
+  return () => subscription.remove();
+}
+
+/**
+ * Subscribe to half-close / reset notifications for a TCP stream.
+ */
+export function addProxyCloseListener(callback: (event: ProxyCloseEvent) => void): () => void {
+  const subscription = eventEmitter.addListener('vpnProxyClose', callback);
   return () => subscription.remove();
 }
 
@@ -90,23 +120,18 @@ export function addVPNPacketListener(callback: (packetBase64: string) => void): 
  */
 export async function checkVPNPermission(): Promise<boolean> {
   if (Platform.OS === 'ios') {
-    // iOS NETunnelProviderManager.loadAllFromPreferences will tell us
-    // indirectly if the profile is enabled. For now we just check status.
     const { status } = await getVPNStatus();
     return status !== 'invalid';
   }
-  // Android: permission check is done in startVPN
   return true;
 }
 
 /**
  * Add additional routes to an already-running VPN tunnel.
- * On Android this re-configures the VPN interface; on iOS it may require restart.
  */
 export async function addVPNRoutes(routes: string[]): Promise<{ success: boolean }> {
   if (Platform.OS === 'android' && CloudDockVPNBridge.addRoutes) {
     return CloudDockVPNBridge.addRoutes(routes);
   }
-  // iOS / fallback: routes must be provided at start time
   return { success: false };
 }
