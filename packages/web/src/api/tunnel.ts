@@ -14,8 +14,8 @@ export interface CreateTunnelRequest {
 export interface UpdateTunnelRequest {
   name?: string;
   localAddress?: string;
-  localHostname?: string;
-  ipWhitelist?: string[];
+  localHostname?: string | undefined;
+  ipWhitelist?: string[] | undefined;
   metadata?: Record<string, unknown>;
 }
 

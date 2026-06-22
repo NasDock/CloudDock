@@ -5,16 +5,16 @@ export interface CreateTunnelRequest {
   name: string;
   protocol: 'http' | 'tcp' | 'udp';
   localAddress: string;
-  localHostname?: string;
-  ipWhitelist?: string[];
+  localHostname?: string | undefined;
+  ipWhitelist?: string[] | undefined;
   metadata?: Record<string, unknown>;
 }
 
 export interface UpdateTunnelRequest {
-  name?: string;
-  localAddress?: string;
-  localHostname?: string;
-  ipWhitelist?: string[];
+  name?: string | undefined;
+  localAddress?: string | undefined;
+  localHostname?: string | undefined;
+  ipWhitelist?: string[] | undefined;
   metadata?: Record<string, unknown>;
 }
 

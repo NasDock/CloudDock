@@ -59,6 +59,13 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="tunnel-edit"
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+            <Stack.Screen
               name="qr-scan"
               options={{
                 presentation: 'fullScreenModal',

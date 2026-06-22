@@ -92,6 +92,12 @@ export const TunnelDetail = () => {
                   {(tunnel as any).enabled === false ? '上线' : '下线'}
                 </Button>
                 <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/tunnels/${tunnel.tunnelId}/edit`)}
+                >
+                  编辑
+                </Button>
+                <Button
                   variant="danger"
                   onClick={() => setDeleteModal(true)}
                   isLoading={deleteTunnel.isPending}

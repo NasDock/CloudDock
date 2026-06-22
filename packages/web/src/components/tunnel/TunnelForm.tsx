@@ -11,9 +11,11 @@ interface TunnelFormProps {
   isLoading?: boolean;
   defaultValues?: Partial<CreateTunnelInput>;
   clients?: { clientId: string; name: string; enabled?: boolean }[];
+  submitLabel?: string;
+  readOnlyFields?: ('protocol' | 'clientId')[];
 }
 
-export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clients }: TunnelFormProps) => {
+export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clients, submitLabel, readOnlyFields }: TunnelFormProps) => {
   const form = useForm<CreateTunnelInput>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createTunnelSchema) as any,
@@ -34,9 +36,10 @@ export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clien
         <div>
           <label className="label">设备</label>
           <select
-            className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:text-gray-500"
             {...getFieldProps('clientId')}
             defaultValue={defaultValues?.clientId || clients[0]?.clientId || ''}
+            disabled={readOnlyFields?.includes('clientId')}
           >
             {clients.map((client) => (
               <option key={client.clientId} value={client.clientId}>
@@ -57,12 +60,13 @@ export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clien
         <label className="label">协议类型</label>
         <div className="flex gap-4">
           {(['http', 'tcp', 'udp'] as const).map((protocol) => (
-            <label key={protocol} className="flex items-center gap-2 cursor-pointer">
+            <label key={protocol} className={`flex items-center gap-2 ${readOnlyFields?.includes('protocol') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
               <input
                 type="radio"
                 value={protocol}
                 {...getFieldProps('protocol')}
-                className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500 disabled:opacity-50"
+                disabled={readOnlyFields?.includes('protocol')}
               />
               <span className="text-sm text-gray-700">
                 {protocol.toUpperCase()}
@@ -106,7 +110,7 @@ export const TunnelForm = ({ onSubmit, onCancel, isLoading, defaultValues, clien
           </Button>
         )}
         <Button type="submit" isLoading={isLoading ?? false}>
-          创建隧道
+          {submitLabel ?? '创建隧道'}
         </Button>
       </div>
     </form>

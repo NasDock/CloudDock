@@ -5,11 +5,11 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import type { Protocol } from '@cloud-dock/shared';
 
-interface TunnelFormData {
+export interface TunnelFormData {
   name: string;
   protocol: Protocol;
   localAddress: string;
-  localHostname?: string;
+  localHostname?: string | undefined;
 }
 
 interface TunnelFormProps {

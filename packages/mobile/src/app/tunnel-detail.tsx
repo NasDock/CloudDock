@@ -107,6 +107,11 @@ export default function TunnelDetailScreen() {
     );
   };
 
+  const handleEdit = () => {
+    if (!tunnel) return;
+    router.push({ pathname: '/tunnel-edit', params: { tunnelId: tunnel.tunnelId } });
+  };
+
   if (isLoading || !tunnel) {
     return (
       <SafeAreaView style={styles.container}>
@@ -127,6 +132,7 @@ export default function TunnelDetailScreen() {
           <View style={styles.headerActions}>
             <StatusBadge status={(tunnel as any).enabled === false ? 'offline' : tunnel.status} label={(tunnel as any).enabled === false ? '已下线' : tunnel.status === 'online' ? '在线' : '离线'} />
             <IconButton icon="power" size={18} onPress={handleToggle} />
+            <IconButton icon="pencil" size={18} onPress={handleEdit} />
             <IconButton icon="trash-can-outline" size={18} onPress={handleDelete} />
           </View>
         }

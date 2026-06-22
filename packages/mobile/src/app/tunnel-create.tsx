@@ -7,24 +7,19 @@ import { Header } from '../components/layout/Header';
 import { TunnelForm } from '../components/tunnel/TunnelForm';
 import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 import { useTunnel } from '../hooks/useTunnel';
-import type { Protocol } from '@cloud-dock/shared';
+import type { TunnelFormData } from '../components/tunnel/TunnelForm';
 
 export default function TunnelCreateScreen() {
   const router = useRouter();
   const { createTunnel, isLoading, error, clearError } = useTunnel();
 
-  const handleSubmit = async (data: {
-    name: string;
-    protocol: Protocol;
-    localAddress: string;
-    localHostname?: string;
-  }) => {
+  const handleSubmit = async (data: TunnelFormData) => {
     try {
       const tunnel = await createTunnel({
         name: data.name,
         protocol: data.protocol,
         localAddress: data.localAddress,
-        localHostname: data.localHostname,
+        localHostname: data.localHostname || undefined,
       });
       Alert.alert('成功', '隧道创建成功', [
         {

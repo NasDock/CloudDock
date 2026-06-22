@@ -1,4 +1,4 @@
-import { createHashRouter, RouterProvider, Navigate, type RouteObject } from 'react-router-dom';
+import { TunnelEdit } from '@/pages/TunnelEdit';import { createHashRouter, RouterProvider, Navigate, type RouteObject } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
@@ -89,6 +89,14 @@ const routes: RouteObject[] = [
     element: (
       <RequireAuth>
         <TunnelDetail />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/tunnels/:tunnelId/edit',
+    element: (
+      <RequireAuth>
+        <TunnelEdit />
       </RequireAuth>
     ),
   },

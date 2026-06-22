@@ -127,6 +127,9 @@ export const TunnelList = () => {
                         <Link to={`/tunnels/${tunnel.tunnelId}`} className="text-sm text-primary-600 hover:text-primary-700">
                           查看
                         </Link>
+                        <Link to={`/tunnels/${tunnel.tunnelId}/edit`} className="text-sm text-primary-600 hover:text-primary-700">
+                          编辑
+                        </Link>
                         <Button variant="secondary" onClick={() => handleToggle(tunnel.tunnelId, (tunnel as any).enabled === false)}>
                           {(tunnel as any).enabled === false ? '上线' : '下线'}
                         </Button>
