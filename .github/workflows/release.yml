@@ -37,6 +37,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
       - name: Build and push server image
         uses: docker/build-push-action@v6
         with:
@@ -48,6 +55,8 @@ jobs:
             ghcr.io/${{ steps.repo.outputs.image_repo }}-server:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-server:latest
+            ${{ secrets.HARBOR_REGISTRY }}/audiodock/clouddock-server:${{ github.ref_name }}
+            ${{ secrets.HARBOR_REGISTRY }}/audiodock/clouddock-server:latest
 
       - name: Build and push edge image
         uses: docker/build-push-action@v6
@@ -60,6 +69,8 @@ jobs:
             ghcr.io/${{ steps.repo.outputs.image_repo }}-edge:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/clouddock-edge:latest
+            ${{ secrets.HARBOR_REGISTRY }}/audiodock/clouddock-edge:${{ github.ref_name }}
+            ${{ secrets.HARBOR_REGISTRY }}/audiodock/clouddock-edge:latest
 
   build-android:
     runs-on: ubuntu-latest
@@ -152,7 +163,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.prepare_apk.outputs.apk_path }}
-
 
   deploy-server:
     runs-on: ubuntu-latest
