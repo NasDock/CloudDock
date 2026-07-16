@@ -40,7 +40,7 @@ export class ProxyServer {
     const socket = new Socket();
 
     socket.connect(port, host, () => {
-      logger.debug('Proxy TCP connected', { streamId, host, port });
+      logger.info('Proxy TCP connected', { streamId, host, port });
       this.streams.set(streamId, { streamId, peerId, socket, connected: true });
       this.config.onProxyConnect(peerId, streamId, host, port);
     });

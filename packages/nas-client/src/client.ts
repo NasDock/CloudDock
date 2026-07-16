@@ -305,7 +305,18 @@ export class NASClient extends EventEmitter {
       });
 
       this.webrtcManager.onProxyConnectReceived = (peerId, msg) => {
-        this.proxyServer?.handleConnect(peerId, msg.streamId, msg.host, msg.port);
+        // NAS 虚拟 IP (100.64.0.1) 指向 NAS 本机服务（web UI 等），重定向到 localhost。
+        // proxy 模式下 NAS 不创建 TUN 接口，直接连本机回环即可。
+        const NAS_VIRTUAL_IP = '100.64.0.1';
+        const targetHost = msg.host === NAS_VIRTUAL_IP ? '127.0.0.1' : msg.host;
+        logger.info('Proxy connect received', {
+          peerId,
+          streamId: msg.streamId,
+          host: msg.host,
+          targetHost,
+          port: msg.port,
+        });
+        this.proxyServer?.handleConnect(peerId, msg.streamId, targetHost, msg.port);
       };
       this.webrtcManager.onProxyDataReceived = (peerId, msg) => {
         this.proxyServer?.handleData(peerId, msg.streamId, msg.data);
