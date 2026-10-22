@@ -34,7 +34,11 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
         // In proxy mode, the service emits per-stream events instead of raw IP
         // packets; the JS layer turns each event into a WebRTC proxy message.
         CloudDockVpnService.eventSink = { eventName, payload ->
-            emitEvent(eventName, payload)
+            // The service emits Kotlin Map payloads (mapOf(...)), but the RN
+            // event emitter only accepts WritableMap/Bundle. Convert here so
+            // a plain LinkedHashMap never reaches Arguments.fromJavaArgs
+            // (which throws and kills the VpnService read loop).
+            emitEvent(eventName, toWritable(payload))
         }
     }
 
@@ -198,5 +202,47 @@ class CloudDockVPNModule(private val reactContext: ReactApplicationContext) :
         reactContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             ?.emit(eventName, data)
+    }
+
+    /** Convert a Kotlin payload (Map/List/primitive) into RN-writable types. */
+    private fun toWritable(value: Any?): Any? {
+        return when (value) {
+            null -> null
+            is Map<*, *> -> {
+                val map = Arguments.createMap()
+                for ((k, v) in value) {
+                    val key = k?.toString() ?: continue
+                    when (val w = toWritable(v)) {
+                        null -> map.putNull(key)
+                        is Boolean -> map.putBoolean(key, w)
+                        is Int -> map.putInt(key, w)
+                        is Long -> map.putDouble(key, w.toDouble())
+                        is Double -> map.putDouble(key, w)
+                        is Float -> map.putDouble(key, w.toDouble())
+                        is String -> map.putString(key, w)
+                        else -> map.putString(key, w.toString())
+                    }
+                }
+                map
+            }
+            is List<*> -> {
+                val arr = Arguments.createArray()
+                for (item in value) {
+                    when (val w = toWritable(item)) {
+                        null -> arr.pushNull()
+                        is Boolean -> arr.pushBoolean(w)
+                        is Int -> arr.pushInt(w)
+                        is Long -> arr.pushDouble(w.toDouble())
+                        is Double -> arr.pushDouble(w)
+                        is Float -> arr.pushDouble(w.toDouble())
+                        is String -> arr.pushString(w)
+                        else -> arr.pushString(w.toString())
+                    }
+                }
+                arr
+            }
+            is Boolean, is Int, is Long, is Double, is Float, is String -> value
+            else -> value.toString()
+        }
     }
 }
