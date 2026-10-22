@@ -86,7 +86,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        # v3 默认 packages 含已下架的 'tools' 包，会报 "Failed to find package 'tools'"
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
