@@ -147,43 +147,68 @@ class CloudDockVpnService : VpnService() {
 
     private fun readLoop() {
         val buffer = ByteArray(32767)
+        var consecutiveErrors = 0
         while (isRunning) {
             try {
                 val length = inputStream?.read(buffer) ?: break
                 if (length > 0) {
                     handleInboundPacket(buffer, length)
                 }
+                consecutiveErrors = 0
             } catch (e: Exception) {
-                if (isRunning) {
-                    Log.e(TAG, "Error reading from TUN", e)
+                if (!isRunning) break
+                consecutiveErrors++
+                // 跳过坏包继续处理，不让单个异常杀死整个 TUN 读循环
+                Log.e(TAG, "readLoop: error #$consecutiveErrors processing packet, skipping", e)
+                if (consecutiveErrors >= 50) {
+                    Log.e(TAG, "readLoop: too many consecutive errors ($consecutiveErrors), exiting loop")
+                    break
                 }
-                break
             }
         }
     }
 
     private fun handleInboundPacket(buf: ByteArray, length: Int) {
-        if (length < IPV4_HEADER_MIN) return
-        val version = (buf[0].toInt() ushr 4) and 0x0F
-        if (version != 4) return
+        try {
+            if (length < IPV4_HEADER_MIN) return
+            val version = (buf[0].toInt() ushr 4) and 0x0F
+            if (version != 4) return
 
-        val ihl = (buf[0].toInt() and 0x0F) * 4
-        if (ihl < IPV4_HEADER_MIN || length < ihl) return
+            val ihl = (buf[0].toInt() and 0x0F) * 4
+            if (ihl < IPV4_HEADER_MIN || length < ihl) return
 
-        val protocol = buf[9].toInt() and 0xFF
-        val srcIp = ipToInt(buf, 12)
-        val dstIp = ipToInt(buf, 16)
-        val totalLen = ((buf[2].toInt() and 0xFF) shl 8) or (buf[3].toInt() and 0xFF)
+            val protocol = buf[9].toInt() and 0xFF
+            val srcIp = ipToInt(buf, 12)
+            val dstIp = ipToInt(buf, 16)
+            val totalLen = ((buf[2].toInt() and 0xFF) shl 8) or (buf[3].toInt() and 0xFF)
 
-        if (protocol == IP_PROTO_TCP) {
-            if (length < ihl + TCP_HEADER_MIN) return
-            handleTcpPacket(buf, length, ihl, srcIp, dstIp, totalLen)
-        } else {
-            // UDP/ICMP/etc — not supported in proxy mode
+            if (protocol == IP_PROTO_TCP) {
+                if (length < ihl + TCP_HEADER_MIN) return
+                handleTcpPacket(buf, length, ihl, srcIp, dstIp, totalLen)
+            } else {
+                // UDP/ICMP/etc — not supported in proxy mode
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "handleInboundPacket: dropped malformed packet", e)
         }
     }
 
     private fun handleTcpPacket(
+        buf: ByteArray,
+        length: Int,
+        ipHeaderLen: Int,
+        srcIp: Int,
+        dstIp: Int,
+        ipTotalLen: Int
+    ) {
+        try {
+            handleTcpPacketInner(buf, length, ipHeaderLen, srcIp, dstIp, ipTotalLen)
+        } catch (e: Exception) {
+            Log.e(TAG, "handleTcpPacket: dropped malformed TCP packet", e)
+        }
+    }
+
+    private fun handleTcpPacketInner(
         buf: ByteArray,
         length: Int,
         ipHeaderLen: Int,
@@ -226,13 +251,14 @@ class CloudDockVpnService : VpnService() {
             streams[streamId] = stream
             streamKeyIndex[key] = streamId
 
+            // sendSynAck 先于 eventSink：即使事件桥抛异常，客户端也能收到 SYN+ACK
+            sendSynAck(stream)
+
             eventSink?.invoke(EVENT_PROXY_CONNECT, mapOf(
                 "streamId" to streamId,
                 "host" to intToIp(dstIp),
                 "port" to dstPort
             ))
-
-            sendSynAck(stream)
             return
         }
 
@@ -250,13 +276,14 @@ class CloudDockVpnService : VpnService() {
         if (payloadLen > 0) {
             val payload = ByteArray(payloadLen)
             System.arraycopy(buf, payloadStart, payload, 0, payloadLen)
+            stream.remoteSeq = (stream.remoteSeq + payloadLen) and 0xFFFFFFFFL.toInt()
+            stream.remoteWindow = window
+            // sendAck 先于 eventSink：保证 ACK 一定回到客户端
+            sendAck(stream)
             eventSink?.invoke(EVENT_PROXY_DATA, mapOf(
                 "streamId" to streamId,
                 "data" to android.util.Base64.encodeToString(payload, android.util.Base64.NO_WRAP)
             ))
-            stream.remoteSeq = (stream.remoteSeq + payloadLen) and 0xFFFFFFFFL.toInt()
-            stream.remoteWindow = window
-            sendAck(stream)
         }
     }
 
@@ -363,42 +390,65 @@ class CloudDockVpnService : VpnService() {
         val totalLen = IPV4_HEADER_MIN + tcpHeaderLen + payloadLen
 
         val pkt = ByteArray(totalLen)
-        val bb = ByteBuffer.wrap(pkt)
 
-        // IPv4 header (IHL = 5, no options)
-        bb.put(((4 shl 4) or 5).toByte())
-        bb.put(0)
-        bb.putShort(totalLen.toShort())
-        bb.putInt(0)
-        bb.putShort(0)
-        bb.put(64.toByte())
-        bb.put(IP_PROTO_TCP.toByte())
-        bb.putShort(0)
-        bb.putInt(srcIp)
-        bb.putInt(dstIp)
+        // IPv4 header (IHL = 5, no options) — 20 bytes at offset 0
+        pkt[0] = ((4 shl 4) or 5).toByte()            // version + IHL
+        pkt[1] = 0                                     // DSCP/ECN
+        pkt[2] = ((totalLen ushr 8) and 0xFF).toByte() // total length hi
+        pkt[3] = (totalLen and 0xFF).toByte()          // total length lo
+        // pkt[4..7] identification = 0
+        // pkt[8..9] flags/fragment = 0
+        pkt[10] = 64.toByte()                          // TTL
+        pkt[11] = IP_PROTO_TCP.toByte()                // protocol
+        // pkt[12..13] header checksum = 0 (filled below)
+        // pkt[14..17] src IP
+        // pkt[18..21] dst IP
+        pkt[14] = ((srcIp ushr 24) and 0xFF).toByte()
+        pkt[15] = ((srcIp ushr 16) and 0xFF).toByte()
+        pkt[16] = ((srcIp ushr 8) and 0xFF).toByte()
+        pkt[17] = (srcIp and 0xFF).toByte()
+        pkt[18] = ((dstIp ushr 24) and 0xFF).toByte()
+        pkt[19] = ((dstIp ushr 16) and 0xFF).toByte()
+        pkt[20] = ((dstIp ushr 8) and 0xFF).toByte()
+        pkt[21] = (dstIp and 0xFF).toByte()
 
-        // TCP header
-        bb.putShort(srcPort.toShort())
-        bb.putShort(dstPort.toShort())
-        bb.putInt(seq)
-        bb.putInt(ack)
-        bb.put(((tcpHeaderLen / 4) shl 4).toByte())
-        bb.put(flags.toByte())
-        bb.putShort(window.toShort())
-        bb.putShort(0)
-        bb.putShort(0)
+        // TCP header — 20 bytes at offset 20
+        val tcpOffset = IPV4_HEADER_MIN
+        pkt[tcpOffset] = ((srcPort ushr 8) and 0xFF).toByte()
+        pkt[tcpOffset + 1] = (srcPort and 0xFF).toByte()
+        pkt[tcpOffset + 2] = ((dstPort ushr 8) and 0xFF).toByte()
+        pkt[tcpOffset + 3] = (dstPort and 0xFF).toByte()
+        // pkt[tcpOffset + 4..7] sequence number
+        pkt[tcpOffset + 4] = ((seq ushr 24) and 0xFF).toByte()
+        pkt[tcpOffset + 5] = ((seq ushr 16) and 0xFF).toByte()
+        pkt[tcpOffset + 6] = ((seq ushr 8) and 0xFF).toByte()
+        pkt[tcpOffset + 7] = (seq and 0xFF).toByte()
+        // pkt[tcpOffset + 8..11] acknowledgement number
+        pkt[tcpOffset + 8] = ((ack ushr 24) and 0xFF).toByte()
+        pkt[tcpOffset + 9] = ((ack ushr 16) and 0xFF).toByte()
+        pkt[tcpOffset + 10] = ((ack ushr 8) and 0xFF).toByte()
+        pkt[tcpOffset + 11] = (ack and 0xFF).toByte()
+        pkt[tcpOffset + 12] = (((tcpHeaderLen / 4) shl 4)).toByte()  // data offset
+        pkt[tcpOffset + 13] = flags.toByte()                          // flags
+        pkt[tcpOffset + 14] = ((window ushr 8) and 0xFF).toByte()     // window hi
+        pkt[tcpOffset + 15] = (window and 0xFF).toByte()              // window lo
+        // pkt[tcpOffset + 16..17] checksum = 0 (filled below)
+        // pkt[tcpOffset + 18..19] urgent pointer = 0
 
-        if (payloadLen > 0) {
-            bb.put(payload)
+        // Copy payload after TCP header
+        if (payloadLen > 0 && payload != null) {
+            System.arraycopy(payload, 0, pkt, tcpOffset + tcpHeaderLen, payloadLen)
         }
 
-        val tcpChecksum = tcpChecksum(pkt, IPV4_HEADER_MIN, tcpHeaderLen + payloadLen, srcIp, dstIp)
-        pkt[IPV4_HEADER_MIN + 16] = (tcpChecksum ushr 8).toByte()
-        pkt[IPV4_HEADER_MIN + 17] = (tcpChecksum and 0xFF).toByte()
+        // Fill TCP checksum
+        val tcpChecksum = tcpChecksum(pkt, tcpOffset, tcpHeaderLen + payloadLen, srcIp, dstIp)
+        pkt[tcpOffset + 16] = (tcpChecksum ushr 8).toByte()
+        pkt[tcpOffset + 17] = (tcpChecksum and 0xFF).toByte()
 
+        // Fill IP header checksum
         val ipChecksum = ipChecksum(pkt, IPV4_HEADER_MIN)
-        pkt[10] = (ipChecksum ushr 8).toByte()
-        pkt[11] = (ipChecksum and 0xFF).toByte()
+        pkt[12] = (ipChecksum ushr 8).toByte()
+        pkt[13] = (ipChecksum and 0xFF).toByte()
 
         return pkt
     }
