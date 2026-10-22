@@ -86,6 +86,7 @@ export class TcpRelay {
 
     localSocket.on('error', (err) => {
       logger.error('TCP relay local connection error', { connectionId, error: err.message });
+      localSocket.destroy();
       clientSocket.destroy();
       this.connections.delete(connectionId);
     });

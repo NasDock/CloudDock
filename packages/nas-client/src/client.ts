@@ -461,6 +461,12 @@ export class NASClient extends EventEmitter {
       const isHttps = url.protocol === 'https:';
       const bodyBuffer = data.body ? Buffer.from(data.body, 'base64') : Buffer.alloc(0);
       const headers: Record<string, string> = { ...(data.headers || {}) };
+      // Strip hop-by-hop headers that must not be forwarded; keeping
+      // 'connection: keep-alive' here prevents the agent from releasing
+      // sockets and piles up CLOSE_WAIT entries against local services.
+      for (const h of ['connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'proxy-connection']) {
+        delete headers[h];
+      }
       const host = localAddress.split(':')[0] || localAddress;
       headers['host'] = host;
       if (bodyBuffer.length > 0) {
@@ -475,6 +481,8 @@ export class NASClient extends EventEmitter {
           path: url.pathname + url.search,
           method: data.method || 'GET',
           headers,
+          // Dedicated agent per request: never keep the socket alive.
+          agent: false,
         },
         (res) => {
           const chunks: Buffer[] = [];
@@ -488,10 +496,23 @@ export class NASClient extends EventEmitter {
               body: body.toString('base64'),
             });
           });
+          res.on('error', (err) => {
+            req.destroy();
+            reject(err);
+          });
         }
       );
 
-      req.on('error', (err) => reject(err));
+      // Hard timeout: if the local service stalls, destroy the socket so it
+      // cannot linger in CLOSE_WAIT and reject the pending request.
+      req.setTimeout(30000, () => {
+        req.destroy(new Error('Local service request timeout'));
+      });
+
+      req.on('error', (err) => {
+        req.destroy();
+        reject(err);
+      });
 
       if (bodyBuffer.length > 0) {
         req.write(bodyBuffer);

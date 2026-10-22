@@ -37,7 +37,14 @@ export class HeartbeatManager {
     if (!conn || conn.isAlive) return;
 
     this.fastify.log.warn({ sessionId, clientId: conn.clientId }, 'Heartbeat timeout');
-    conn.ws.close(1006, 'Heartbeat timeout');
+    // Use terminate() instead of close(): 1006 is a reserved code and cannot
+    // be sent in a close frame, and close() would wait for a close handshake
+    // that a dead peer will never answer, leaving the socket in CLOSE_WAIT.
+    try {
+      conn.ws.terminate();
+    } catch {
+      // socket may already be closed
+    }
     connectionPool.removeConnection(sessionId);
   }
 

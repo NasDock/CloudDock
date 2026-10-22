@@ -158,8 +158,16 @@ export class HttpProxy {
         headers: {
           ...data.headers,
           'host': this.config.localAddress.split(':')[0]
-        }
+        },
+        // Never reuse/keep-alive these sockets; stale sockets against the
+        // local service accumulate in CLOSE_WAIT.
+        agent: false as const,
       };
+
+      // Strip hop-by-hop headers that break socket lifecycle management.
+      for (const h of ['connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'proxy-connection']) {
+        delete (options.headers as Record<string, string>)[h];
+      }
 
       const req = httpRequest(options, (res) => {
         const chunks: Buffer[] = [];
@@ -180,9 +188,20 @@ export class HttpProxy {
           };
           resolve(responseData);
         });
+
+        res.on('error', (err) => {
+          req.destroy();
+          reject(err);
+        });
+      });
+
+      // Hard timeout so a stalled local service cannot hold the socket open.
+      req.setTimeout(30000, () => {
+        req.destroy(new Error('Local service request timeout'));
       });
 
       req.on('error', (err) => {
+        req.destroy();
         reject(err);
       });
 

@@ -58,6 +58,11 @@ export class ProxyServer {
     socket.on('error', (err) => {
       logger.warn('Proxy TCP error', { streamId, error: err.message });
       this.streams.delete(streamId);
+      try {
+        socket.destroy();
+      } catch {
+        // ignore
+      }
       this.config.onProxyClose(peerId, streamId);
     });
   }

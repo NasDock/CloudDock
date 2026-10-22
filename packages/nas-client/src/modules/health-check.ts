@@ -61,19 +61,26 @@ export class HealthCheck {
     const start = Date.now();
 
     try {
-      // Attempt to connect to the server URL to check connectivity
-      const wsUrl = this.serverUrl.replace(/^wss?:\/\//, 'https://');
+      // Attempt to connect to the server URL to check connectivity.
+      // Map ws->http, wss->https (previously ws was wrongly mapped to https,
+      // causing a TLS handshake against a plain HTTP server every interval).
+      const httpUrl = this.serverUrl
+        .replace(/^wss:\/\//, 'https://')
+        .replace(/^ws:\/\//, 'http://');
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
 
       try {
-        const response = await fetch(wsUrl, {
+        const response = await fetch(httpUrl, {
           method: 'HEAD',
-          mode: 'no-cors',
           signal: controller.signal
         });
         clearTimeout(timeout);
+
+        // Drain and release the response body so the socket is returned to
+        // the pool instead of lingering.
+        await response.arrayBuffer().catch(() => {});
 
         const latencyMs = Date.now() - start;
         const status: HealthStatus = {
@@ -84,14 +91,15 @@ export class HealthCheck {
 
         this.notifyCallbacks(status);
         return status;
-      } catch {
+      } catch (fetchErr) {
         clearTimeout(timeout);
-        // no-cors mode will always fail with TypeError, but that means server is reachable
+        // A network-level error means the server is NOT reachable.
         const latencyMs = Date.now() - start;
         const status: HealthStatus = {
-          healthy: true,
+          healthy: false,
           timestamp: Date.now(),
-          latencyMs
+          latencyMs,
+          error: fetchErr instanceof Error ? fetchErr.message : 'Fetch failed'
         };
 
         this.notifyCallbacks(status);

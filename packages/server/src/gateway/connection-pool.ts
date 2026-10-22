@@ -83,6 +83,17 @@ export class ConnectionPool {
       clearInterval(conn.heartbeatTimer);
     }
 
+    // Safety net: always close the underlying socket when a session is
+    // removed, so sockets never linger in CLOSE_WAIT regardless of which
+    // code path triggered the removal.
+    try {
+      if (conn.ws.readyState === WebSocket.OPEN || conn.ws.readyState === WebSocket.CONNECTING) {
+        conn.ws.terminate();
+      }
+    } catch {
+      // socket may already be closed
+    }
+
     this.connections.delete(sessionId);
   }
 
@@ -115,6 +126,13 @@ export class ConnectionPool {
       if (!conn) return;
 
       if (!conn.isAlive) {
+        // Terminate the underlying socket before removing the session,
+        // otherwise dead sockets pile up in CLOSE_WAIT (fd leak).
+        try {
+          conn.ws.terminate();
+        } catch {
+          // socket may already be closed
+        }
         this.removeConnection(sessionId);
         return;
       }
